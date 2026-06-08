@@ -1,0 +1,30 @@
+body {
+    background-color: rgb(154, 86, 218);
+}
+
+.header {
+    background-color: rgba(231, 209, 14, 0.973);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 10vh;
+}
+
+.header_description {
+    padding-left: 20px;
+}
+
+.header_auth {
+    display: flex;
+    justify-content: space-between;
+    font-size: 20px;
+}
+
+.header_auth__button {
+    background-color: rgb(94, 247, 94);
+    height: 6vh;
+    border-radius: 35px;
+    text-align: center;
+    margin-right: 10px;
+    padding: 0px 15px;
+}
