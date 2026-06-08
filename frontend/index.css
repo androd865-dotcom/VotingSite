@@ -8,6 +8,7 @@ body {
     align-items: center;
     justify-content: space-between;
     height: 10vh;
+    margin-bottom: 30px;
 }
 
 .header_description {
@@ -29,32 +30,86 @@ body {
     padding: 0px 15px;
 }
 
-.dropdown {
+.votelist {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.votelist_dropdown {
     position: relative;
+    font-size: 20px;
+    margin: 0 30px;
 }
 
-.dropdown-checkbox {
+.votelist_dropdown__checkbox {
     display: none;
 }
 
-.dropdown-label {
-    display: inline-block;
-    background-color: #4CAF50;
-    color: white;
-    padding: 16px;
+
+.votelist_dropdown__label {
+    display: flex;
+    justify-content: space-between;
+    text-align: center;
+    padding: 16px 15px;
     cursor: pointer;
+    user-select: none;
+    border-radius: 20px;
+    background-color: #4CAF50;
+    transition: background-color 0.2s ease, border-radius 0.3s ease;
 }
 
-.dropdown-content {
-    display: none;
-    position: absolute;
+.votelist_dropdown__label:hover {
+    background-color: #45a049;
+}
+
+.votelist_dropdown__checkbox:checked ~ .votelist_dropdown__label {
+    border-radius: 20px 20px 0 0;
+}
+
+.votelist_dropdown__content {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
     background-color: #f9f9f9;
-    min-width: 160px;
+    border-radius: 0 0 20px 20px;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 1;
+    transform: translateY(-10px);
+    transition: max-height 0.4s ease, opacity 0.3s ease, transform 0.3s ease, padding 0.4s ease;
+    padding: 0 0;
 }
 
-.dropdown-checkbox:checked ~ .dropdown-content {
-    display: block;
+.votelist_dropdown__content li {
+    padding: 10px 20px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
 }
 
+.votelist_dropdown__checkbox:checked ~ .votelist_dropdown__content {
+    max-height: 300px;
+    opacity: 1;
+    transform: translateY(0);
+    padding: 10px 0;
+}
+
+.votelist_content__checkbox {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    cursor: pointer;
+    accent-color: #4CAF50;
+}
+
+.votelist_content__checkboxDescription {
+    cursor: pointer;
+    user-select: none;
+}
+
+.votelist_content__vote {
+    background-color: #4CAF50;
+    border-radius: 20px;
+    padding: 4px 15px;
+    margin-left: auto;
+    margin-top: -10px;
+}

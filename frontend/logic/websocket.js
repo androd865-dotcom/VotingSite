@@ -1,8 +1,22 @@
-const socket = new WebSocket('wss://localhost:5000')
+const socket = new WebSocket('ws://localhost:5000')
 
 socket.addEventListener('open', (event) => {
     console.log('Подключение установлено!');
     socket.send('Привет, сервер!');
+})
+
+socket.addEventListener('message', (event) => {
+    console.log('Получены данные от сервера!');
+    const json = event.data;
+
+    console.log('Данные от сервера:', json);
+    const data = JSON.parse(json);
+
+
+})
+
+socket.addEventListener('error', (event) => {
+    console.error('Ошибка WebSocket');
 })
 
 socket.addEventListener('close', (event) => {
