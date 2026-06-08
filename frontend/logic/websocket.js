@@ -1,4 +1,4 @@
-const socket = new WebSocket('ws://localhost:5000')
+const socket = new WebSocket('ws://localhost:8000/websocket')
 
 socket.addEventListener('open', (event) => {
     console.log('Подключение установлено!');
@@ -27,3 +27,12 @@ socket.addEventListener('close', (event) => {
 
     console.log(`Код: ${event.code}, причина: ${event.reason}`);
 })
+
+document.querySelector('.votelist').addEventListener('click', (event) => {
+    if (event.target.closest('.votelist_content__vote')){
+        console.log('Клик по кнопке');
+        event.preventDefault();
+    }
+
+    console.log(event.target)
+});
