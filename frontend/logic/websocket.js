@@ -4,15 +4,15 @@ function renderVote(data) {
         if (data.many) {
             variants = variants + `
                 <li class="votelist_content__list">
-                    <input type="checkbox" class="votelist_content__checkbox" id="votelist_content__checkbox${secondCounter}"/>
-                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${secondCounter++}">Я люблю собак</label>
+                    <input type="checkbox" class="votelist_content__checkbox" id="votelist_content__checkbox${data.variants[i].id}"/>
+                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${data.variants[i].id}">${data.variants[i].name}</label>
                 </li>
             `
         } else {
             variants = variants + `
                 <li class="votelist_content__list">
-                    <input type="radio" class="votelist_content__checkbox" id="votelist_content__checkbox${secondCounter}"/>
-                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${secondCounter++}">Я люблю собак</label>
+                    <input type="radio" class="votelist_content__checkbox" id="votelist_content__checkbox${data.variants[i].id}"/>
+                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${data.variants[i].id}">${data.variants[i].name}</label>
                 </li>
             `
         }
@@ -20,8 +20,8 @@ function renderVote(data) {
 
     votelist.innerHTML = `${votelist.innerHTML} +   
             <li class="votelist_dropdown">
-                <input type="checkbox" id="votelist_dropdown__checkbox${counter}" class="votelist_dropdown__checkbox">
-                <label for="votelist_dropdown__checkbox${counter++}" class="votelist_dropdown__label">Кто из животных вам нравится?</label>
+                <input type="checkbox" id=${data.id} class="votelist_dropdown__checkbox">
+                <label for=${data.id} class="votelist_dropdown__label">${data.header}</label>
                 <ul class="votelist_dropdown__content">
                     ${variants}
                 </ul>
@@ -31,10 +31,6 @@ function renderVote(data) {
 
 const socket = new WebSocket('ws://localhost:8000/websocket')
 const votelist = document.querySelector('.votelist');
-let counter = 0;
-let secondCounter = 0;
-
-
 
 socket.addEventListener('open', (event) => {
     console.log('Подключение установлено!');
@@ -71,10 +67,28 @@ socket.addEventListener('close', (event) => {
 })
 
 votelist.addEventListener('click', (event) => {
-    if (event.target.closest('.votelist_content__vote')){
-        console.log('Клик по кнопке');
+    const button = event.target.closest('.votelist_content__vote');
+    if (button) {
         event.preventDefault();
-    }
+        const dropdown = button.closest('.votelist_dropdown');
+        const checkedInputs = dropdown.querySelectorAll('.votelist_content__checkbox:checked');
 
-    console.log(event.target)
+        const votes = Array.from(checkedInputs).map(input => {
+            const label = dropdown.querySelector(`label[for="${input.id}"]`);
+            return Number(input.id.replace('votelist_content__checkbox', ''));
+        })
+
+        if (!votes.length) {
+            console.log('Нельзя отправить!')
+        } else {
+            socket.send(JSON.stringify({
+                id: dropdown.querySelector('.votelist_dropdown__checkbox').id,
+                votes: votes
+            }))
+        }
+        console.log(JSON.stringify({
+            id: dropdown.querySelector('.votelist_dropdown__checkbox').id,
+            votes: votes
+        }));
+    }
 });
