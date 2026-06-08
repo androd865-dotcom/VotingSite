@@ -1,5 +1,7 @@
 const socket = new WebSocket('ws://localhost:8000/websocket')
-
+const votelist = document.querySelector('.votelist');
+let counter = 0;
+let secondCounter = 0;
 socket.addEventListener('open', (event) => {
     console.log('Подключение установлено!');
     socket.send('Привет, сервер!');
@@ -12,7 +14,33 @@ socket.addEventListener('message', (event) => {
     console.log('Данные от сервера:', json);
     const data = JSON.parse(json);
 
+    let variants = ''
+    for (let i = 0; i < data.variants.length; i++) {
+        if (data.many) {
+            variants = variants + `
+                <li class="votelist_content__list">
+                    <input type="checkbox" class="votelist_content__checkbox" id="votelist_content__checkbox${secondCounter}"/>
+                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${secondCounter++}">Я люблю собак</label>
+                </li>
+            `
+        } else {
+            variants = variants + `
+                <li class="votelist_content__list">
+                    <input type="radio" class="votelist_content__checkbox" id="votelist_content__checkbox${secondCounter}"/>
+                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${secondCounter++}">Я люблю собак</label>
+                </li>
+            `
+        }
+    }
 
+   votelist.innerHTML = `${votelist.innerHTML} +   
+            <li class="votelist_dropdown">
+                <input type="checkbox" id="votelist_dropdown__checkbox${counter}" class="votelist_dropdown__checkbox">
+                <label for="votelist_dropdown__checkbox${counter++}" class="votelist_dropdown__label">Кто из животных вам нравится?</label>
+                <ul class="votelist_dropdown__content">
+                    ${variants}
+                </ul>
+            </li>`;
 })
 
 socket.addEventListener('error', (event) => {
@@ -28,7 +56,7 @@ socket.addEventListener('close', (event) => {
     console.log(`Код: ${event.code}, причина: ${event.reason}`);
 })
 
-document.querySelector('.votelist').addEventListener('click', (event) => {
+votelist.addEventListener('click', (event) => {
     if (event.target.closest('.votelist_content__vote')){
         console.log('Клик по кнопке');
         event.preventDefault();
