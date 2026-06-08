@@ -9,11 +9,9 @@ body {
     justify-content: space-between;
     height: 10vh;
     margin-bottom: 30px;
+    padding: 0 20px 0 15px;
 }
 
-.header_description {
-    padding-left: 20px;
-}
 
 .header_auth {
     display: flex;
@@ -26,7 +24,7 @@ body {
     height: 6vh;
     border-radius: 35px;
     text-align: center;
-    margin-right: 10px;
+    margin-left: 10px;
     padding: 0px 15px;
 }
 

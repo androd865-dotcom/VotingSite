@@ -74,7 +74,6 @@ votelist.addEventListener('click', (event) => {
         const checkedInputs = dropdown.querySelectorAll('.votelist_content__checkbox:checked');
 
         const votes = Array.from(checkedInputs).map(input => {
-            const label = dropdown.querySelector(`label[for="${input.id}"]`);
             return Number(input.id.replace('votelist_content__checkbox', ''));
         })
 
