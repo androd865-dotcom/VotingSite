@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="3199a08d-b155-472b-b70e-090bf6020451" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../backend/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.idea/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/.idea/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/mvnw" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/mvnw" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/mvnw.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/mvnw.cmd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/module-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/module-info.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/MainApp.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/controllers/AdminController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/controllers/LoginController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/controllers/UserController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/TopicDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/TopicDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/UserDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/UserDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/VoteDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/VoteDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/Option.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/Option.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/Topic.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/Topic.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/User.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/util/DatabaseUtil.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/admin-view.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/admin-view.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/login-view.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/login-view.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/user-view.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/user-view.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/logic/auth.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/logic/auth.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/logic/websocket.js" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/logic/websocket.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/reset.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/reset.css" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+        <option value="FxmlFile" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 2
+}]]></component>
+  <component name="ProjectId" id="3EoAlOzPlXrf0rVkNoVFMBSt2te" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.MainApp.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/UserK/Desktop/4 семестр/Прога java/РГР/RGR",
+    "project.structure.last.edited": "Libraries",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.63908046"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\UserK\Desktop\4 семестр\Прога java\РГР\RGR" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="3199a08d-b155-472b-b70e-090bf6020451" name="Changes" comment="" />
+      <created>1780834700927</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1780834700927</updated>
+    </task>
+    <servers />
+  </component>
+</project>

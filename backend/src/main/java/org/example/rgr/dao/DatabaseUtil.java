@@ -1,71 +1,79 @@
-package org.example.rgr.util;
+package org.example.rgr.dao;
 
 import java.sql.*;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class DatabaseUtil {
     private static final String DB_URL = "jdbc:sqlite:voting.db";
-
+    
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL);
     }
-
+    
     public static void initializeDatabase() {
         String createUsersTable = """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                role TEXT NOT NULL
+                login TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
             )
         """;
-
+        
         String createTopicsTable = """
             CREATE TABLE IF NOT EXISTS topics (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL
+                name_question TEXT NOT NULL,
+                many INTEGER DEFAULT 0,
+                count_of_users INTEGER DEFAULT 0
             )
         """;
-
-        String createOptionsTable = """
-            CREATE TABLE IF NOT EXISTS options (
+        
+        String createAnswersTable = """
+            CREATE TABLE IF NOT EXISTS answers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name_answer TEXT NOT NULL,
                 topic_id INTEGER NOT NULL,
-                option_text TEXT NOT NULL,
+                count INTEGER DEFAULT 0,
                 FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
             )
         """;
-
+        
         String createVotesTable = """
             CREATE TABLE IF NOT EXISTS votes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                topic_id INTEGER NOT NULL,
-                option_id INTEGER NOT NULL,
                 user_id INTEGER NOT NULL,
-                voted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE,
-                FOREIGN KEY (option_id) REFERENCES options(id) ON DELETE CASCADE,
+                topic_id INTEGER NOT NULL,
+                answer_id INTEGER NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE,
+                FOREIGN KEY (answer_id) REFERENCES answers(id) ON DELETE CASCADE,
                 UNIQUE(user_id, topic_id)
             )
         """;
-
+        
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
+            
             stmt.execute(createUsersTable);
             stmt.execute(createTopicsTable);
-            stmt.execute(createOptionsTable);
+            stmt.execute(createAnswersTable);
             stmt.execute(createVotesTable);
-
-            // Добавляем тестового админа
-            String checkAdmin = "SELECT COUNT(*) FROM users WHERE role = 'ADMIN'";
+            
+            String checkAdmin = "SELECT COUNT(*) FROM users WHERE id = 1";
             ResultSet rs = stmt.executeQuery(checkAdmin);
             if (rs.next() && rs.getInt(1) == 0) {
-                String insertAdmin = "INSERT INTO users (username, password, role) VALUES ('admin', 'admin123', 'ADMIN')";
-                stmt.execute(insertAdmin);
-                System.out.println("Тестовый администратор: admin / admin123");
+                String hashedPassword = BCrypt.hashpw("123adm", BCrypt.gensalt());
+                String insertAdmin = "INSERT INTO users (id, login, password) VALUES (1, 'admin123', ?)";
+                PreparedStatement pstmt = conn.prepareStatement(insertAdmin);
+                pstmt.setString(1, hashedPassword);
+                pstmt.executeUpdate();
+                System.out.println("✅ Админ создан: login=admin123, pass=123adm, id=1");
             }
+            
+            System.out.println("✅ База данных готова к работе!");
+            
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("❌ Ошибка БД: " + e.getMessage());
         }
     }
 }

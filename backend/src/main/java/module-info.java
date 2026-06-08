@@ -1,18 +1,28 @@
 module org.example.rgr {
+    // JavaFX модули (если используете JavaFX)
     requires javafx.controls;
     requires javafx.fxml;
+    
+    // WebSocket и JSON
+    requires java.websocket;
+    requires com.google.gson;
+    
+    // SQLite и BCrypt
     requires java.sql;
     requires sqlite.jdbc;
-
-    // Экспортируем пакеты для JavaFX
+    requires jbcrypt;
+    
+    // Экспортируем наши пакеты
     exports org.example.rgr;
-    exports org.example.rgr.controllers;
     exports org.example.rgr.model;
     exports org.example.rgr.dao;
-    exports org.example.rgr.util;
-
-    // Открываем пакеты для JavaFX FXML
-    opens org.example.rgr.controllers to javafx.fxml;
-    opens org.example.rgr.model to javafx.base;
-    opens org.example.rgr to javafx.fxml;
+    exports org.example.rgr.service;
+    exports org.example.rgr.websocket;
+    
+    // Открываем пакеты для рефлексии (JavaFX FXML, Gson)
+    opens org.example.rgr to javafx.fxml, com.google.gson;
+    opens org.example.rgr.model to com.google.gson;
+    opens org.example.rgr.dao to com.google.gson;
+    opens org.example.rgr.service to com.google.gson;
+    opens org.example.rgr.websocket to com.google.gson;
 }
