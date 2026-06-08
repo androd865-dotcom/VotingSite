@@ -54,7 +54,7 @@ socket.addEventListener('message', (event) => {
     if (Array.isArray(data))
         data.forEach(vote => renderVote(vote))
 
-    else renderVote(vote)
+    else renderVote(data)
 
 })
 
