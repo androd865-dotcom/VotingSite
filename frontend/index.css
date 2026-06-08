@@ -97,6 +97,7 @@ body {
     margin-right: 10px;
     cursor: pointer;
     accent-color: #4CAF50;
+    transition: box-shadow 0.2s ease;
 }
 
 .votelist_content__checkboxDescription {

@@ -8,14 +8,15 @@
     <link rel="stylesheet" href="index.css">
     <link rel="shortcut icon" href="assets/favicon.jpg" type="image/x-icon">
     <script src="logic/index.js" defer></script>
+    <script src="logic/auth.js" defer></script>
     <script src="logic/websocket.js" defer></script>
 </head>
 <body>
     <header class="header">
         <h1 class="header_description">Этот сайт создан для публикации голосований.</h1>
         <ul class="header_auth">
-            <li><button class="header_auth__button">Войти</button></li>
-            <li><button class="header_auth__button">Зарегистрироваться</button></li>
+            <li><button class="header_auth__button" id="login">Войти</button></li>
+            <li><button class="header_auth__button" id="register">Зарегистрироваться</button></li>
         </ul>
     </header>
     <main class="main">
