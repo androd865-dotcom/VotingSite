@@ -1,30 +1,50 @@
 package org.example.rgr.dao;
 
-import org.example.rgr.model.Option;
-import org.example.rgr.util.DatabaseUtil;
 import java.sql.*;
-import java.util.*;
 
 public class VoteDAO {
-
-    public static boolean vote(int userId, int topicId, int optionId) throws SQLException {
-        if (hasUserVoted(userId, topicId)) {
+    
+    public static boolean vote(int userId, int topicId, int answerId) throws SQLException {
+        if (hasVoted(userId, topicId)) {
             return false;
         }
-
-        String sql = "INSERT INTO votes (topic_id, option_id, user_id) VALUES (?, ?, ?)";
-        try (Connection conn = DatabaseUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, topicId);
-            pstmt.setInt(2, optionId);
-            pstmt.setInt(3, userId);
-            pstmt.executeUpdate();
+        
+        Connection conn = null;
+        try {
+            conn = DatabaseUtil.getConnection();
+            conn.setAutoCommit(false);
+            
+            String sqlVote = "INSERT INTO votes (user_id, topic_id, answer_id) VALUES (?, ?, ?)";
+            PreparedStatement pstmtVote = conn.prepareStatement(sqlVote);
+            pstmtVote.setInt(1, userId);
+            pstmtVote.setInt(2, topicId);
+            pstmtVote.setInt(3, answerId);
+            pstmtVote.executeUpdate();
+            
+            String sqlAnswer = "UPDATE answers SET count = count + 1 WHERE id = ?";
+            PreparedStatement pstmtAnswer = conn.prepareStatement(sqlAnswer);
+            pstmtAnswer.setInt(1, answerId);
+            pstmtAnswer.executeUpdate();
+            
+            String sqlTopic = "UPDATE topics SET count_of_users = count_of_users + 1 WHERE id = ?";
+            PreparedStatement pstmtTopic = conn.prepareStatement(sqlTopic);
+            pstmtTopic.setInt(1, topicId);
+            pstmtTopic.executeUpdate();
+            
+            conn.commit();
             return true;
+            
+        } catch (SQLException e) {
+            if (conn != null) conn.rollback();
+            throw e;
+        } finally {
+            if (conn != null) conn.close();
         }
     }
-
-    public static boolean hasUserVoted(int userId, int topicId) throws SQLException {
+    
+    public static boolean hasVoted(int userId, int topicId) throws SQLException {
         String sql = "SELECT COUNT(*) FROM votes WHERE user_id = ? AND topic_id = ?";
+        
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
@@ -33,30 +53,32 @@ public class VoteDAO {
             return rs.next() && rs.getInt(1) > 0;
         }
     }
-
-    public static List<Option> getStatistics(int topicId) throws SQLException {
-        String sql = """
-            SELECT o.id, o.topic_id, o.option_text, COUNT(v.id) as vote_count 
-            FROM options o 
-            LEFT JOIN votes v ON o.id = v.option_id 
-            WHERE o.topic_id = ? 
-            GROUP BY o.id
-        """;
-
-        List<Option> statistics = new ArrayList<>();
+    
+    public static int getAnswerCount(int answerId) throws SQLException {
+        String sql = "SELECT count FROM answers WHERE id = ?";
+        
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, answerId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("count");
+            }
+        }
+        return 0;
+    }
+    
+    public static int getTopicVoteCount(int topicId) throws SQLException {
+        String sql = "SELECT count_of_users FROM topics WHERE id = ?";
+        
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, topicId);
             ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                statistics.add(new Option(
-                        rs.getInt("id"),
-                        rs.getInt("topic_id"),
-                        rs.getString("option_text"),
-                        rs.getInt("vote_count")
-                ));
+            if (rs.next()) {
+                return rs.getInt("count_of_users");
             }
         }
-        return statistics;
+        return 0;
     }
 }

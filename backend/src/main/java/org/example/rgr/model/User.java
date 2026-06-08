@@ -2,19 +2,31 @@ package org.example.rgr.model;
 
 public class User {
     private int id;
-    private String username;
+    private String login;
     private String password;
-    private String role;
-
-    public User(int id, String username, String password, String role) {
+    
+    public User() {}
+    
+    public User(int id, String login, String password) {
         this.id = id;
-        this.username = username;
+        this.login = login;
         this.password = password;
-        this.role = role;
     }
-
+    
     public int getId() { return id; }
-    public String getUsername() { return username; }
+    public String getLogin() { return login; }
     public String getPassword() { return password; }
-    public String getRole() { return role; }
+    
+    public void setId(int id) { this.id = id; }
+    public void setLogin(String login) { this.login = login; }
+    public void setPassword(String password) { this.password = password; }
+    
+    public boolean isAdmin() {
+        return id == 1 && "admin123".equals(login);
+    }
+    
+    @Override
+    public String toString() {
+        return "User{id=" + id + ", login='" + login + "'}";
+    }
 }
