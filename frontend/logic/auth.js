@@ -70,6 +70,12 @@ document.querySelector('#login').addEventListener('click', () => {
 
     document.querySelector('.main').insertAdjacentHTML('beforeend', `
         <form class="form" onsubmit="login(event)">
+            <button type="button" class="form_close" onclick="(() => {
+                const oldForm = document.querySelector('.form');
+                if (oldForm) {
+                    oldForm.remove();
+                }
+            })()">x</button>
             <label for="username" class="form_label">Имя пользователя</label>
             <input type="text" id="username" class="form_input" name="username" required>
             
@@ -90,6 +96,12 @@ document.querySelector('#register').addEventListener('click', () => {
 
     document.querySelector('.main').insertAdjacentHTML('beforeend', `
         <form class="form" onsubmit="register(event)">
+            <button type="button" class="form_close" onclick="(() => {
+                const oldForm = document.querySelector('.form');
+                if (oldForm) {
+                    oldForm.remove();
+                }
+            })()">x</button>
             <label for="username" class="form_label">Имя пользователя</label>
             <input type="text" id="username" class="form_input" name="username" required>
             
