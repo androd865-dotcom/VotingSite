@@ -1,19 +1,4 @@
-const socket = new WebSocket('ws://localhost:8000/websocket')
-const votelist = document.querySelector('.votelist');
-let counter = 0;
-let secondCounter = 0;
-socket.addEventListener('open', (event) => {
-    console.log('Подключение установлено!');
-    socket.send('Привет, сервер!');
-})
-
-socket.addEventListener('message', (event) => {
-    console.log('Получены данные от сервера!');
-    const json = event.data;
-
-    console.log('Данные от сервера:', json);
-    const data = JSON.parse(json);
-
+function renderVote(data) {
     let variants = ''
     for (let i = 0; i < data.variants.length; i++) {
         if (data.many) {
@@ -33,14 +18,44 @@ socket.addEventListener('message', (event) => {
         }
     }
 
-   votelist.innerHTML = `${votelist.innerHTML} +   
+    votelist.innerHTML = `${votelist.innerHTML} +   
             <li class="votelist_dropdown">
                 <input type="checkbox" id="votelist_dropdown__checkbox${counter}" class="votelist_dropdown__checkbox">
                 <label for="votelist_dropdown__checkbox${counter++}" class="votelist_dropdown__label">Кто из животных вам нравится?</label>
                 <ul class="votelist_dropdown__content">
                     ${variants}
                 </ul>
-            </li>`;
+            </li>
+   `;
+}
+
+const socket = new WebSocket('ws://localhost:8000/websocket')
+const votelist = document.querySelector('.votelist');
+-
+let counter = 0;
+let secondCounter = 0;
+
+
+
+socket.addEventListener('open', (event) => {
+    console.log('Подключение установлено!');
+    socket.send('Привет, сервер!');
+
+
+})
+
+socket.addEventListener('message', (event) => {
+    console.log('Получены данные от сервера!');
+    const json = event.data;
+
+    console.log('Данные от сервера:', json);
+    const data = JSON.parse(json);
+
+    if (Array.isArray(data))
+        data.forEach(vote => renderVote(vote))
+
+    else renderVote(vote)
+
 })
 
 socket.addEventListener('error', (event) => {
