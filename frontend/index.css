@@ -28,3 +28,33 @@ body {
     margin-right: 10px;
     padding: 0px 15px;
 }
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-checkbox {
+    display: none;
+}
+
+.dropdown-label {
+    display: inline-block;
+    background-color: #4CAF50;
+    color: white;
+    padding: 16px;
+    cursor: pointer;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.dropdown-checkbox:checked ~ .dropdown-content {
+    display: block;
+}
+

@@ -19,16 +19,20 @@
     </header>
     <main class="main">
         <ul class="votelist">
-            <li><button class="votelist_element">
-                <ul>
+            <li class="votelist_dropdown">
+                <input type="checkbox" id="votelist_dropdown_checkbox1" class="votelist_dropdown__checkbox">
+                <label for="votelist_dropdown_checkbox1" class="votelist_dropdown__label">Нажмите меня</label>
+                <ul class="votelist_dropdown__content">
                     <li>
-                        <input type="text">
+                        <input type="checkbox" class="votelist_content__checkbox">
+                        <label class="votelist_content__checkboxDescription">Я люблю собак</label>
                     </li>
                     <li>
-                        <input type="text">
+                        <input type="checkbox" class="votelist_content__checkbox">
+                        <label class="votelist_content__checkboxDescription">Я люблю кошек</label>
                     </li>
                 </ul>
-            </button></li>
+            </li>
         </ul>
     </main>
     <footer class="footer">
