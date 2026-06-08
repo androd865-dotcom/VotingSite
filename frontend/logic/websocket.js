@@ -31,7 +31,6 @@ function renderVote(data) {
 
 const socket = new WebSocket('ws://localhost:8000/websocket')
 const votelist = document.querySelector('.votelist');
--
 let counter = 0;
 let secondCounter = 0;
 
