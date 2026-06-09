@@ -1,4 +1,4 @@
-
+import makeVoteForm from './index.js'
 
 async function login(event) {
     event.preventDefault();
@@ -20,7 +20,9 @@ async function login(event) {
         body: JSON.stringify({username, password})
     })
     if (response.ok) {
-        if (username === 'admin123') document.querySelector('.header_auth').innerHTML = `<button class="header_auth__button">Создать голосование</button>`
+        if (username === 'admin123') document.querySelector('.header_auth').innerHTML = `
+            <button class="header_auth__button" onclick="makeVoteForm()">Создать голосование</button>
+        `
         else document.querySelector('.header_auth').innerHTML = username;
         const oldForm = document.querySelector('.form');
         if (oldForm) {
@@ -51,11 +53,9 @@ async function register(event) {
     })
     if (response.ok) {
         document.querySelector('.header_auth').innerHTML = username;
-        const oldForm = document.querySelector('.form');
-        if (oldForm) {
-            oldForm.remove();
-        }
+
     } else console.log('Пользователь с таким именем уже существует!');
+    removeForm();
 
 }
 
