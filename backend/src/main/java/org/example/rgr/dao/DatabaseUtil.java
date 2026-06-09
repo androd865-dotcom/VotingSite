@@ -11,7 +11,7 @@ public class DatabaseUtil {
     }
     
     public static void initializeDatabase() {
-        // 1. Таблица пользователей (с колонкой voted_topics)
+        // 1. Таблица пользователей
         String createUsersTable = """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,15 +50,16 @@ public class DatabaseUtil {
             stmt.execute(createAnswersTable);
             
             // Создаем админа
-            String checkAdmin = "SELECT COUNT(*) FROM users WHERE id = 1";
+            String checkAdmin = "SELECT COUNT(*) FROM users WHERE login = 'admin123'";
             ResultSet rs = stmt.executeQuery(checkAdmin);
             if (rs.next() && rs.getInt(1) == 0) {
                 String hashedPassword = BCrypt.hashpw("123adm", BCrypt.gensalt());
-                String insertAdmin = "INSERT INTO users (id, login, password, voted_topics) VALUES (1, 'admin123', ?, '[]')";
+                String insertAdmin = "INSERT INTO users (login, password, voted_topics) VALUES (?, ?, '[]')";
                 PreparedStatement pstmt = conn.prepareStatement(insertAdmin);
-                pstmt.setString(1, hashedPassword);
+                pstmt.setString(1, "admin123");
+                pstmt.setString(2, hashedPassword);
                 pstmt.executeUpdate();
-                System.out.println("✅ Админ создан: login=admin123, pass=123adm, id=1");
+                System.out.println("✅ Админ создан: login=admin123, pass=123adm");
             }
             
             System.out.println("✅ База данных инициализирована!");
