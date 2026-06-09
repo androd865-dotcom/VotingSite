@@ -9,6 +9,7 @@ let count = 0;
 export default function makeVoteForm(event) {
     event.preventDefault();
     removeForm();
+    count = 0
     document.querySelector('.main').insertAdjacentHTML('beforeend', `
         <form class="form" onsubmit="makeVote(event)" onclick="makeVariant(event)">
             <button type="button" class="form_close" onclick="removeForm()">x</button>
@@ -38,9 +39,11 @@ function makeVariant(event) {
         document.querySelector('.form_variantsList').insertAdjacentHTML('beforeend', `
             <li>
                 <label for="variant${count}" class="form_label"></label>
+                
                 <input type="text" id="variant${count}" class="form_input" name="variant${count++}" required>
             </li>
         `)
+        if (count == 7) document.querySelector('.form_makeVariant__plus').remove();
     }
 }
 
