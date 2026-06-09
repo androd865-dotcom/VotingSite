@@ -215,3 +215,21 @@ body {
     box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
 }
 
+.form_makeVariant {
+    font-size: 24px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+
+}
+
+.form_makeVariant__plus {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    margin: 0 0 20px 0;
+    width: 28px;
+    height: 28px;
+}

@@ -1,4 +1,5 @@
-import makeVoteForm from './index.js'
+import makeVoteForm from './index.js';
+import removeForm from './removeForm.js';
 
 async function login(event) {
     event.preventDefault();
@@ -21,10 +22,7 @@ async function login(event) {
             <button class="header_auth__button" onclick="makeVoteForm(event)">Создать голосование</button>
         `
         else document.querySelector('.header_auth').innerHTML = username;
-        const oldForm = document.querySelector('.form');
-        if (oldForm) {
-            oldForm.remove();
-        }
+        removeForm();
     } else console.log('Неверный логин или пароль!')
 }
 
@@ -105,12 +103,7 @@ document.querySelector('#register').addEventListener('click', () => {
     `);
 });
 
-function removeForm() {
-    const oldForm = document.querySelector('.form');
-    if (oldForm) {
-        oldForm.remove();
-    }
-}
+
 
 window.login = login;
 window.register = register;
