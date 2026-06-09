@@ -6,6 +6,7 @@ import org.example.rgr.service.AuthService;
 import org.example.rgr.service.TopicService;
 import org.example.rgr.service.VoteService;
 import org.example.rgr.dao.UserDAO;
+import org.example.rgr.dao.TopicDAO;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -33,8 +34,6 @@ public class VotingWebSocketServer extends WebSocketServer {
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
         System.out.println("✅ Новое подключение: " + conn.getRemoteSocketAddress());
         sessions.put(conn, null);
-        
-        // Отправляем ТОЛЬКО массив голосований
         sendAllVotes(conn, null);
     }
     
@@ -42,7 +41,6 @@ public class VotingWebSocketServer extends WebSocketServer {
     public void onMessage(WebSocket conn, String message) {
         System.out.println("📨 Получено: " + message);
         
-        // При приветствии отправляем ТОЛЬКО массив голосований (без CONNECTED)
         if (message.equals("Привет, сервер!")) {
             sendAllVotes(conn, sessions.get(conn));
             return;
@@ -51,7 +49,10 @@ public class VotingWebSocketServer extends WebSocketServer {
         try {
             Map<String, Object> request = gson.fromJson(message, Map.class);
             
-            if (request.containsKey("action")) {
+            // Проверяем, что это запрос на создание голосования
+            if (request.containsKey("nameQuestion") && request.containsKey("namesAnswers")) {
+                handleCreateVoting(conn, request);
+            } else if (request.containsKey("action")) {
                 String action = (String) request.get("action");
                 handleAction(conn, action, request);
             } else if (request.containsKey("id") && request.containsKey("votes")) {
@@ -63,6 +64,69 @@ public class VotingWebSocketServer extends WebSocketServer {
         } catch (Exception e) {
             System.out.println("Ошибка парсинга: " + e.getMessage());
             sendError(conn, "Ошибка обработки сообщения");
+        }
+    }
+    
+    // 🔥 ОБРАБОТЧИК СОЗДАНИЯ ГОЛОСОВАНИЯ
+    private void handleCreateVoting(WebSocket conn, Map<String, Object> request) {
+        User user = sessions.get(conn);
+        
+        // Проверка на авторизацию и права админа
+        if (user == null) {
+            sendError(conn, "Необходимо авторизоваться");
+            return;
+        }
+        
+        if (!user.getLogin().equals("admin123")) {
+            sendError(conn, "Доступ запрещен. Только администратор может создавать голосования");
+            return;
+        }
+        
+        try {
+            // Получаем данные от фронта
+            String nameQuestion = (String) request.get("nameQuestion");
+            boolean many = (boolean) request.get("many");
+            List<String> namesAnswers = (List<String>) request.get("namesAnswers");
+            
+            System.out.println("📝 Админ создает голосование:");
+            System.out.println("   Название: " + nameQuestion);
+            System.out.println("   Множественный выбор: " + many);
+            System.out.println("   Варианты: " + namesAnswers);
+            
+            // Валидация данных
+            if (nameQuestion == null || nameQuestion.trim().isEmpty()) {
+                sendError(conn, "Введите название голосования");
+                return;
+            }
+            
+            if (namesAnswers == null || namesAnswers.size() < 2) {
+                sendError(conn, "Добавьте минимум 2 варианта ответа");
+                return;
+            }
+            
+            // Сохраняем в базу данных
+            int topicId = TopicDAO.create(nameQuestion, many, namesAnswers);
+            
+            if (topicId > 0) {
+                System.out.println("✅ Голосование успешно создано! ID: " + topicId);
+                
+                // Отправляем подтверждение админу
+                Map<String, Object> response = new HashMap<>();
+                response.put("type", "VOTING_CREATED");
+                response.put("message", "Голосование \"" + nameQuestion + "\" успешно создано!");
+                response.put("topicId", topicId);
+                conn.send(gson.toJson(response));
+                
+                // 🔥 ОБНОВЛЯЕМ ВСЕХ ПОДКЛЮЧЕННЫХ КЛИЕНТОВ
+                sendAllVotesToAll();
+            } else {
+                sendError(conn, "Ошибка при сохранении голосования в базу данных");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Ошибка создания голосования: " + e.getMessage());
+            e.printStackTrace();
+            sendError(conn, "Ошибка создания голосования: " + e.getMessage());
         }
     }
     
@@ -100,7 +164,6 @@ public class VotingWebSocketServer extends WebSocketServer {
         
         if (result.isSuccess()) {
             sessions.put(conn, result.getUser());
-            // После входа отправляем ТОЛЬКО обновленный массив
             sendAllVotes(conn, result.getUser());
         } else {
             sendError(conn, result.getMessage());
@@ -155,7 +218,7 @@ public class VotingWebSocketServer extends WebSocketServer {
     
     private void handleCreateTopic(WebSocket conn, Map<String, Object> request) {
         User user = sessions.get(conn);
-        if (user == null || user.getId() != 1) {
+        if (user == null || !user.getLogin().equals("admin123")) {
             sendError(conn, "Доступ запрещен. Требуются права администратора");
             return;
         }
@@ -175,7 +238,7 @@ public class VotingWebSocketServer extends WebSocketServer {
     
     private void handleDeleteTopic(WebSocket conn, Map<String, Object> request) {
         User user = sessions.get(conn);
-        if (user == null || user.getId() != 1) {
+        if (user == null || !user.getLogin().equals("admin123")) {
             sendError(conn, "Доступ запрещен. Требуются права администратора");
             return;
         }
@@ -193,7 +256,7 @@ public class VotingWebSocketServer extends WebSocketServer {
     
     private void handleUpdateTopic(WebSocket conn, Map<String, Object> request) {
         User user = sessions.get(conn);
-        if (user == null || user.getId() != 1) {
+        if (user == null || !user.getLogin().equals("admin123")) {
             sendError(conn, "Доступ запрещен. Требуются права администратора");
             return;
         }
@@ -210,7 +273,6 @@ public class VotingWebSocketServer extends WebSocketServer {
         }
     }
     
-    // 🔥 Отправляем ТОЛЬКО массив голосований
     private void sendAllVotes(WebSocket conn, User user) {
         try {
             int userId = (user != null) ? user.getId() : -1;
@@ -225,7 +287,6 @@ public class VotingWebSocketServer extends WebSocketServer {
         }
     }
     
-    // 🔥 Отправляем обновления всем клиентам
     private void sendAllVotesToAll() {
         for (Map.Entry<WebSocket, User> entry : sessions.entrySet()) {
             WebSocket conn = entry.getKey();
@@ -269,8 +330,8 @@ public class VotingWebSocketServer extends WebSocketServer {
         System.out.println("📍 Адрес: ws://localhost:8000");
         System.out.println("📝 Администратор: login=admin123, password=123adm");
         System.out.println("========================================");
-        System.out.println("💡 Отправляется ТОЛЬКО массив голосований:");
-        System.out.println("   [{id, header, many, hasVoted, variants: [{id, name}]}]");
+        System.out.println("💡 Формат для создания голосования:");
+        System.out.println("   { nameQuestion: '...', many: true/false, namesAnswers: ['...', '...'] }");
         System.out.println("========================================");
     }
 }
