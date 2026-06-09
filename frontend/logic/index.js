@@ -9,11 +9,11 @@ let count = 0;
 export default function makeVoteForm(event) {
     event.preventDefault();
     removeForm();
-    count = 0
+    count = 0;
     document.querySelector('.main').insertAdjacentHTML('beforeend', `
         <form class="form" onsubmit="makeVote(event)" onclick="makeVariant(event)">
             <button type="button" class="form_close" onclick="removeForm()">x</button>
-            <label for="voteName" class="form_label form_header"><div>Тема опроса<div/><input type="radio" name=""></input></label>
+            <label for="voteName" class="form_label form_header"><div>Тема опроса</div><input type="radio" name="form_radio"><input type="radio" name="form_radio"></label>
             <input type="text" id="voteName" class="form_input" name="voteName" required>
             <div class="form_label">
                 Варианты ответов
