@@ -93,4 +93,5 @@ votelist.addEventListener('click', (event) => {
     }
 });
 
+window.socket = socket;
 export default socket;
