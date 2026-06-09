@@ -8,18 +8,37 @@
     <link rel="stylesheet" href="index.css">
     <link rel="shortcut icon" href="assets/favicon.jpg" type="image/x-icon">
     <script src="logic/index.js" defer></script>
+    <script src="logic/auth.js" defer></script>
     <script src="logic/websocket.js" defer></script>
 </head>
 <body>
     <header class="header">
         <h1 class="header_description">Этот сайт создан для публикации голосований.</h1>
         <ul class="header_auth">
-            <li><button class="header_auth__button">Войти</button></li>
-            <li><button class="header_auth__button">Зарегистрироваться</button></li>
+            <li><button class="header_auth__button" id="login">Войти</button></li>
+            <li><button class="header_auth__button" id="register">Зарегистрироваться</button></li>
         </ul>
     </header>
     <main class="main">
         <ul class="votelist">
+            <li class="votelist_dropdown">
+                <input type="checkbox" id="votelist_dropdown__checkbox1" class="votelist_dropdown__checkbox">
+                <label for="votelist_dropdown__checkbox1" class="votelist_dropdown__label">Кто из животных вам нравится?</label>
+                <ul class="votelist_dropdown__content">
+                    <li class="votelist_content__list">
+                        <input type="checkbox" class="votelist_content__checkbox" id="votelist_content__checkbox1"/>
+                        <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox1">Я люблю собак</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" class="votelist_content__checkbox" id="votelist_content__checkbox2"/>
+                        <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox2">Я люблю кошек</label>
+                    </li>
+                    <li>
+                        <button class="votelist_content__vote">Проголосовать</button>
+                    </li>
+                </ul>
+            </li>
+
             <li class="votelist_dropdown">
                 <input type="checkbox" id="votelist_dropdown__checkbox1" class="votelist_dropdown__checkbox">
                 <label for="votelist_dropdown__checkbox1" class="votelist_dropdown__label">Кто из животных вам нравится?</label>
