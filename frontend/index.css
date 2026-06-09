@@ -234,6 +234,12 @@ body {
     height: 28px;
 }
 
+.form_radioContainer {
+    display: flex;
+    gap: 5px;
+    padding-right: 10px;
+}
+
 .form_header {
     display: flex;
     justify-content: space-between;

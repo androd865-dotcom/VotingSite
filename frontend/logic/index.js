@@ -13,7 +13,15 @@ export default function makeVoteForm(event) {
     document.querySelector('.main').insertAdjacentHTML('beforeend', `
         <form class="form" onsubmit="makeVote(event)" onclick="makeVariant(event)">
             <button type="button" class="form_close" onclick="removeForm()">x</button>
-            <label for="voteName" class="form_label form_header"><div>Тема опроса</div><input type="radio" name="form_radio"><input type="radio" name="form_radio"></label>
+            <div class="form_label form_header">
+                <div>Тема опроса</div>
+                <div class="form_radioContainer">
+                    <label for="form_radio__one" class="form_radio__label">Один</label>
+                    <input type="radio" name="form_radio" id="form_radio__one" class="form_radio">
+                    <label for="form_radio__many" class="form_radio__label">Много</label>
+                    <input type="radio" name="form_radio" id="form_radio__many" class="form_radio">
+                </div>
+            </div>
             <input type="text" id="voteName" class="form_input" name="voteName" required>
             <div class="form_label">
                 Варианты ответов
@@ -34,7 +42,6 @@ export default function makeVoteForm(event) {
 }
 
 function makeVariant(event) {
-    event.preventDefault();
     if (event.target.classList.contains('form_makeVariant__plus')) {
         document.querySelector('.form_variantsList').insertAdjacentHTML('beforeend', `
             <li>
