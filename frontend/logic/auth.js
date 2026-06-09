@@ -20,6 +20,10 @@ async function login(event) {
     if (response.ok) {
         if (username === 'admin123') document.querySelector('.header_auth').innerHTML = `<button class="header_auth__button">Создать голосование</button>`
         else document.querySelector('.header_auth').innerHTML = username;
+        const oldForm = document.querySelector('.form');
+        if (oldForm) {
+            oldForm.remove();
+        }
     } else console.log('Неверный логин или пароль!')
 }
 
@@ -45,6 +49,10 @@ async function register(event) {
     })
     if (response.ok) {
         document.querySelector('.header_auth').innerHTML = username;
+        const oldForm = document.querySelector('.form');
+        if (oldForm) {
+            oldForm.remove();
+        }
     } else console.log('Пользователь с таким именем уже существует!');
 
 }
