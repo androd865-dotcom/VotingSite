@@ -1,5 +1,6 @@
 async function makeVote(event) {
     event.preventDefault();
+
 }
 
 let count = 0;
@@ -37,6 +38,8 @@ function makeVariant(event) {
         `)
     }
 }
+
+
 
 window.makeVoteForm = makeVoteForm;
 window.makeVariant = makeVariant;

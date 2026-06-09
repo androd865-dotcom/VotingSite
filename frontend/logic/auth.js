@@ -9,9 +9,6 @@ async function login(event) {
     const username = formData.get('username');
     const password = formData.get('password');
 
-    console.log('Username:', username);
-    console.log('Password:', password)
-
     const response = await fetch('http://localhost:3000/api/login', {
         method: 'POST',
         headers: {
