@@ -1,35 +1,7 @@
 import removeForm from './removeForm.js';
-import socket from './websocket.js'
 
 async function makeVote(event) {
     event.preventDefault();
-    const form = event.target;
-
-    const formData = new FormData(form);
-    const header = formData.get('voteName')
-    const many = formData.get('form_radio')
-
-    const variants = [];
-    for (let [key, value] of formData.entries()) {
-        if (key.startsWith('variant')) {
-            variants.push(value);
-        }
-    }
-
-    const voteData = {
-        type: 'create',
-        header: header,
-        many: many,
-        variants: variants
-    };
-
-    socket.send(JSON.stringify(voteData));
-
-    console.log('Извлечённые данные:', voteData);
-
-    console.log(header, many)
-    console.log(formData);
-    removeForm();
 }
 
 let count = 0;
@@ -45,9 +17,9 @@ export default function makeVoteForm(event) {
                 <div>Тема опроса</div>
                 <div class="form_radioContainer">
                     <label for="form_radio__one" class="form_radio__label">Один</label>
-                    <input type="radio" name="form_radio" id="form_radio__one" class="form_radio" value="false" required>
+                    <input type="radio" name="form_radio" id="form_radio__one" class="form_radio">
                     <label for="form_radio__many" class="form_radio__label">Много</label>
-                    <input type="radio" name="form_radio" id="form_radio__many" class="form_radio" value="true" required>
+                    <input type="radio" name="form_radio" id="form_radio__many" class="form_radio">
                 </div>
             </div>
             <input type="text" id="voteName" class="form_input" name="voteName" required>
@@ -78,7 +50,7 @@ function makeVariant(event) {
                 <input type="text" id="variant${count}" class="form_input" name="variant${count++}" required>
             </li>
         `)
-        if (count === 7) document.querySelector('.form_makeVariant__plus').remove();
+        if (count == 7) document.querySelector('.form_makeVariant__plus').remove();
     }
 }
 
