@@ -38,8 +38,6 @@ const votelist = document.querySelector('.votelist');
 socket.addEventListener('open', (event) => {
     console.log('Подключение установлено!');
     socket.send('Привет, сервер!');
-    console.log(event.data)
-
 })
 
 socket.addEventListener('message', (event) => {
