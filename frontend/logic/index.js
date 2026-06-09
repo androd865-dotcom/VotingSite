@@ -13,7 +13,7 @@ export default function makeVoteForm(event) {
     document.querySelector('.main').insertAdjacentHTML('beforeend', `
         <form class="form" onsubmit="makeVote(event)" onclick="makeVariant(event)">
             <button type="button" class="form_close" onclick="removeForm()">x</button>
-            <label for="voteName" class="form_label">Тема опроса</label>
+            <label for="voteName" class="form_label form_header"><div>Тема опроса<div/><input type="radio" name=""></input></label>
             <input type="text" id="voteName" class="form_input" name="voteName" required>
             <div class="form_label">
                 Варианты ответов

@@ -233,3 +233,8 @@ body {
     width: 28px;
     height: 28px;
 }
+
+.form_header {
+    display: flex;
+    justify-content: space-between;
+}

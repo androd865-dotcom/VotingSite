@@ -11,7 +11,7 @@ function renderVote(data) {
         } else {
             variants = variants + `
                 <li class="votelist_content__list">
-                    <input type="radio" class="votelist_content__checkbox" id="votelist_content__checkbox${data.variants[i].id}"/>
+                    <input type="radio" class="votelist_content__checkbox" id="votelist_content__checkbox${data.variants[i].id}" name=${data.id} />
                     <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${data.variants[i].id}">${data.variants[i].name}</label>
                 </li>
             `
