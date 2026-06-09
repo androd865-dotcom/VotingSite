@@ -23,7 +23,7 @@ async function login(event) {
             <button class="header_auth__button" onclick="makeVoteForm(event)">Создать голосование</button>
             `
             document.querySelectorAll('.votelist_dropdown__label').forEach((label) => {
-                label.innerHTML = ''
+                label.innerHTML = label.innerHTML
             })
         }
         else document.querySelector('.header_auth').innerHTML = username;
@@ -59,7 +59,11 @@ async function register(event) {
 
 }
 
-function logout(event) {
+async function isAuthorized() {
+    fetch()
+}
+
+async function logout(event) {
     event.preventDefault();
     document.querySelector('.header_auth').innerHTML = `
         <li>
