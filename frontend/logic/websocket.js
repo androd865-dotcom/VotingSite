@@ -32,7 +32,7 @@ function renderVote(data) {
    `;
 }
 
-const socket = new WebSocket('ws://localhost:8000')
+const socket = new WebSocket('ws://localhost:8000');
 const votelist = document.querySelector('.votelist');
 
 socket.addEventListener('open', (event) => {
@@ -92,3 +92,5 @@ votelist.addEventListener('click', (event) => {
         }));
     }
 });
+
+export default socket;
