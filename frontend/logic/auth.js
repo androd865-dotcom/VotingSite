@@ -40,9 +40,6 @@ async function register(event) {
     const username = formData.get('username');
     const password = formData.get('password');
 
-    console.log('Username:', username);
-    console.log('Password:', password)
-
     if (password.length < 5) {console.log("Этот пароль слишком короткий!"); return;}
     const response = await fetch('http://localhost:3000/api/register', {
         method: 'POST',
@@ -60,7 +57,9 @@ async function register(event) {
 }
 
 async function isAuthorized() {
-    fetch()
+    return await fetch('http://localhost:3000/api/isAuthorized', {
+        method: 'GET'
+    })
 }
 
 async function logout(event) {
