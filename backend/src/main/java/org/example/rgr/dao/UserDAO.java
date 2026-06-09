@@ -3,16 +3,22 @@ package org.example.rgr.dao;
 import org.example.rgr.model.User;
 import org.mindrot.jbcrypt.BCrypt;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 public class UserDAO {
+    private static final Gson gson = new Gson();
     
+    // Регистрация нового пользователя
     public static User register(String login, String password) throws SQLException {
         if (exists(login)) {
             return null;
         }
         
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-        String sql = "INSERT INTO users (login, password) VALUES (?, ?)";
+        String sql = "INSERT INTO users (login, password, voted_topics) VALUES (?, ?, '[]')";
         
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -22,12 +28,13 @@ public class UserDAO {
             
             ResultSet rs = pstmt.getGeneratedKeys();
             if (rs.next()) {
-                return new User(rs.getInt(1), login, hashedPassword);
+                return new User(rs.getInt(1), login, null, new ArrayList<>());
             }
         }
         return null;
     }
     
+    // Вход пользователя
     public static User login(String login, String password) throws SQLException {
         String sql = "SELECT * FROM users WHERE login = ?";
         
@@ -39,13 +46,23 @@ public class UserDAO {
             if (rs.next()) {
                 String hashedPassword = rs.getString("password");
                 if (BCrypt.checkpw(password, hashedPassword)) {
-                    return new User(rs.getInt("id"), rs.getString("login"), hashedPassword);
+                    // Получаем JSON строку voted_topics и превращаем в List
+                    String votedTopicsJson = rs.getString("voted_topics");
+                    List<Integer> votedTopics = parseVotedTopics(votedTopicsJson);
+                    
+                    User user = new User();
+                    user.setId(rs.getInt("id"));
+                    user.setLogin(rs.getString("login"));
+                    user.setPassword(hashedPassword);
+                    user.setVotedTopics(votedTopics);
+                    return user;
                 }
             }
         }
         return null;
     }
     
+    // Проверка существования пользователя
     public static boolean exists(String login) throws SQLException {
         String sql = "SELECT COUNT(*) FROM users WHERE login = ?";
         
@@ -57,6 +74,7 @@ public class UserDAO {
         }
     }
     
+    // Получить пользователя по ID
     public static User getById(int id) throws SQLException {
         String sql = "SELECT * FROM users WHERE id = ?";
         
@@ -65,9 +83,57 @@ public class UserDAO {
             pstmt.setInt(1, id);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return new User(rs.getInt("id"), rs.getString("login"), rs.getString("password"));
+                String votedTopicsJson = rs.getString("voted_topics");
+                List<Integer> votedTopics = parseVotedTopics(votedTopicsJson);
+                
+                User user = new User();
+                user.setId(rs.getInt("id"));
+                user.setLogin(rs.getString("login"));
+                user.setPassword(rs.getString("password"));
+                user.setVotedTopics(votedTopics);
+                return user;
             }
         }
         return null;
+    }
+    
+    // Добавить тему в список проголосованных
+    public static void addVotedTopic(int userId, int topicId) throws SQLException {
+        // Сначала получаем текущий список
+        User user = getById(userId);
+        if (user == null) return;
+        
+        if (!user.getVotedTopics().contains(topicId)) {
+            user.getVotedTopics().add(topicId);
+        }
+        
+        // Сохраняем обновленный список
+        String newVotedTopicsJson = gson.toJson(user.getVotedTopics());
+        String sql = "UPDATE users SET voted_topics = ? WHERE id = ?";
+        
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, newVotedTopicsJson);
+            pstmt.setInt(2, userId);
+            pstmt.executeUpdate();
+        }
+    }
+    
+    // Проверить, голосовал ли пользователь за тему
+    public static boolean hasVoted(int userId, int topicId) throws SQLException {
+        User user = getById(userId);
+        return user != null && user.getVotedTopics().contains(topicId);
+    }
+    
+    // Парсим JSON строку в List<Integer>
+    private static List<Integer> parseVotedTopics(String json) {
+        if (json == null || json.isEmpty()) {
+            return new ArrayList<>();
+        }
+        try {
+            return gson.fromJson(json, new TypeToken<List<Integer>>(){}.getType());
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
     }
 }

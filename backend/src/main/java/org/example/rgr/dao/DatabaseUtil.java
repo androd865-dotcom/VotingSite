@@ -11,14 +11,17 @@ public class DatabaseUtil {
     }
     
     public static void initializeDatabase() {
+        // 1. Таблица пользователей (с колонкой voted_topics)
         String createUsersTable = """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 login TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                voted_topics TEXT DEFAULT '[]'
             )
         """;
         
+        // 2. Таблица тем
         String createTopicsTable = """
             CREATE TABLE IF NOT EXISTS topics (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,6 +31,7 @@ public class DatabaseUtil {
             )
         """;
         
+        // 3. Таблица ответов
         String createAnswersTable = """
             CREATE TABLE IF NOT EXISTS answers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,39 +42,26 @@ public class DatabaseUtil {
             )
         """;
         
-        String createVotesTable = """
-            CREATE TABLE IF NOT EXISTS votes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                topic_id INTEGER NOT NULL,
-                answer_id INTEGER NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE,
-                FOREIGN KEY (answer_id) REFERENCES answers(id) ON DELETE CASCADE,
-                UNIQUE(user_id, topic_id)
-            )
-        """;
-        
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             
             stmt.execute(createUsersTable);
             stmt.execute(createTopicsTable);
             stmt.execute(createAnswersTable);
-            stmt.execute(createVotesTable);
             
+            // Создаем админа
             String checkAdmin = "SELECT COUNT(*) FROM users WHERE id = 1";
             ResultSet rs = stmt.executeQuery(checkAdmin);
             if (rs.next() && rs.getInt(1) == 0) {
                 String hashedPassword = BCrypt.hashpw("123adm", BCrypt.gensalt());
-                String insertAdmin = "INSERT INTO users (id, login, password) VALUES (1, 'admin123', ?)";
+                String insertAdmin = "INSERT INTO users (id, login, password, voted_topics) VALUES (1, 'admin123', ?, '[]')";
                 PreparedStatement pstmt = conn.prepareStatement(insertAdmin);
                 pstmt.setString(1, hashedPassword);
                 pstmt.executeUpdate();
                 System.out.println("✅ Админ создан: login=admin123, pass=123adm, id=1");
             }
             
-            System.out.println("✅ База данных готова к работе!");
+            System.out.println("✅ База данных инициализирована!");
             
         } catch (SQLException e) {
             System.err.println("❌ Ошибка БД: " + e.getMessage());

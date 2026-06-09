@@ -2,9 +2,10 @@ package org.example.rgr.service;
 
 import org.example.rgr.dao.VoteDAO;
 import org.example.rgr.dao.TopicDAO;
+import org.example.rgr.dao.UserDAO;
 import org.example.rgr.model.Topic;
 import org.example.rgr.model.Answer;
-import java.util.List;
+import java.util.*;
 
 public class VoteService {
     
@@ -33,13 +34,15 @@ public class VoteService {
         public Object getData() { return data; }
     }
     
-    public VoteResult processVote(int userId, int topicId, int answerId) {
+    // Обработка голосования
+    public VoteResult processVote(int userId, int topicId, List<Integer> answerIds) {
         try {
             if (userId <= 0) {
                 return VoteResult.error("Пользователь не авторизован");
             }
             
-            if (VoteDAO.hasVoted(userId, topicId)) {
+            // Проверяем, не голосовал ли уже пользователь
+            if (UserDAO.hasVoted(userId, topicId)) {
                 return VoteResult.error("Вы уже голосовали за эту тему");
             }
             
@@ -48,23 +51,41 @@ public class VoteService {
                 return VoteResult.error("Тема не найдена");
             }
             
-            boolean answerValid = topic.getAnswers().stream()
-                .anyMatch(a -> a.getId() == answerId);
-            if (!answerValid) {
-                return VoteResult.error("Неверный вариант ответа");
+            // Проверяем, что все выбранные ответы принадлежат этой теме
+            Set<Integer> validAnswerIds = new HashSet<>();
+            for (Answer a : topic.getAnswers()) {
+                validAnswerIds.add(a.getId());
             }
             
-            boolean success = VoteDAO.vote(userId, topicId, answerId);
-            if (!success) {
-                return VoteResult.error("Ошибка при сохранении голоса");
+            for (int answerId : answerIds) {
+                if (!validAnswerIds.contains(answerId)) {
+                    return VoteResult.error("Неверный вариант ответа: " + answerId);
+                }
             }
             
-            List<Answer> stats = topic.getAnswers();
-            for (Answer a : stats) {
-                a.setCount(VoteDAO.getAnswerCount(a.getId()));
+            // Сохраняем голоса
+            int successCount = 0;
+            for (int answerId : answerIds) {
+                boolean success = VoteDAO.vote(userId, topicId, answerId);
+                if (success) successCount++;
             }
             
-            return VoteResult.success(stats, "Голос принят!");
+            if (successCount == 0) {
+                return VoteResult.error("Ошибка при сохранении голосов");
+            }
+            
+            // Формируем статистику для ответа
+            List<Map<String, Object>> stats = new ArrayList<>();
+            for (Answer a : topic.getAnswers()) {
+                Map<String, Object> stat = new HashMap<>();
+                stat.put("id", a.getId());
+                stat.put("name", a.getNameAnswer());
+                stat.put("count", VoteDAO.getAnswerCount(a.getId()));
+                stats.add(stat);
+            }
+            
+            String message = successCount == 1 ? "Голос принят!" : "Голоса приняты!";
+            return VoteResult.success(stats, message);
             
         } catch (Exception e) {
             return VoteResult.error("Ошибка: " + e.getMessage());

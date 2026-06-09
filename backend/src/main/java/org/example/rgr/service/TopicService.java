@@ -1,13 +1,11 @@
 package org.example.rgr.service;
 
 import org.example.rgr.dao.TopicDAO;
-import org.example.rgr.dao.VoteDAO;
+import org.example.rgr.dao.UserDAO;
 import org.example.rgr.model.Topic;
 import org.example.rgr.model.Answer;
 import org.example.rgr.model.VoteData;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
 
 public class TopicService {
     
@@ -36,31 +34,47 @@ public class TopicService {
         public Object getData() { return data; }
     }
     
-    public List<VoteData> getAllVotesForFrontend() {
+    // Формирует данные для фронта с учетом проголосованных тем
+    public List<VoteData> getAllVotesForFrontend(int userId) {
         try {
             List<Topic> topics = TopicDAO.getAll();
             List<VoteData> voteDataList = new ArrayList<>();
             
+            // Получаем список тем, за которые пользователь уже проголосовал
+            List<Integer> votedTopics = userId > 0 ? UserDAO.getById(userId).getVotedTopics() : new ArrayList<>();
+            
             for (Topic topic : topics) {
-                List<String> variants = topic.getAnswers().stream()
-                    .map(Answer::getNameAnswer)
-                    .collect(Collectors.toList());
+                // Создаем массив variants
+                List<Map<String, Object>> variants = new ArrayList<>();
+                for (Answer answer : topic.getAnswers()) {
+                    Map<String, Object> variant = new HashMap<>();
+                    variant.put("id", answer.getId());
+                    variant.put("name", answer.getNameAnswer());
+                    variants.add(variant);
+                }
+                
+                // Добавляем флаг hasVoted - знает ли фронт, что пользователь уже голосовал
+                boolean hasVoted = votedTopics.contains(topic.getId());
                 
                 VoteData voteData = new VoteData(
                     topic.getId(),
                     topic.getNameQuestion(),
+                    topic.isMany(),
                     variants,
-                    topic.isMany()
+                    hasVoted  // ← новый флаг для фронта
                 );
                 voteDataList.add(voteData);
             }
+            
             return voteDataList;
+            
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
         }
     }
     
+    // Остальные методы без изменений...
     public TopicResult createTopic(String nameQuestion, boolean many, List<String> answerNames, int adminId) {
         try {
             if (adminId != 1) {

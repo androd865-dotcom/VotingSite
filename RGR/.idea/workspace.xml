@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3199a08d-b155-472b-b70e-090bf6020451" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/.idea/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/.idea/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/.idea/encodings.xml" afterDir="false" />
@@ -14,17 +15,20 @@
       <change beforePath="$PROJECT_DIR$/../backend/mvnw.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/mvnw.cmd" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/src/main/java/module-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/module-info.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/MainApp.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/controllers/AdminController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/controllers/LoginController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/controllers/UserController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/Server.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/Server.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/Websocket/VotingWebSocketServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/Websocket/VotingWebSocketServer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/Websocket/WebSocketMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/Websocket/WebSocketMessage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/DatabaseUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/DatabaseUtil.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/TopicDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/TopicDAO.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/UserDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/UserDAO.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/VoteDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/dao/VoteDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/Option.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/Option.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/Answer.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/Answer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/Topic.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/Topic.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/util/DatabaseUtil.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/VoteData.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/model/VoteData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/service/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/service/AuthService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/service/TopicService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/service/TopicService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/service/VoteService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/org/example/rgr/service/VoteService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/admin-view.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/admin-view.fxml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/login-view.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/login-view.fxml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/user-view.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/resources/org/example/rgr/user-view.fxml" afterDir="false" />
