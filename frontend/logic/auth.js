@@ -53,13 +53,16 @@ async function register(event) {
 
     } else console.log('Пользователь с таким именем уже существует!');
     removeForm();
-
 }
 
-async function isAuthorized() {
-    return await fetch('http://localhost:3000/api/isAuthorized', {
-        method: 'GET'
+async function isAuthorized(name) {
+    const response = await fetch('http://localhost:3000/api/check', {
+        method: 'GET',
+        body: JSON.stringify({
+            name: name,
+        })
     })
+    return response.authenticated
 }
 
 async function logout(event) {
@@ -72,6 +75,10 @@ async function logout(event) {
             <button class="header_auth__button" id="register">Зарегистрироваться</button>
         </li>
     `;
+
+    await fetch('http://localhost:3000/api/logout', {
+        method: 'POST',
+    })
 }
 
 document.querySelector('#login').addEventListener('click', () => {

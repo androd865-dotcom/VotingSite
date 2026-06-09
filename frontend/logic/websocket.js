@@ -37,11 +37,9 @@ const votelist = document.querySelector('.votelist');
 
 socket.addEventListener('open', (event) => {
     console.log('Подключение установлено!');
-    socket.send('Привет, сервер!');
 })
 
 socket.addEventListener('message', (event) => {
-    console.log('Получены данные от сервера!');
     const json = event.data;
 
     console.log('Данные от сервера:', json);
@@ -64,7 +62,11 @@ socket.addEventListener('close', (event) => {
     else 
         console.log('Соединение сброшено');
 
-    console.log(`Код: ${event.code}, причина: ${event.reason}`);
+    fetch('http://localhost:3000/api/logout', {
+        method: 'POST',
+        body: JSON.stringify({
+        })
+    })
 })
 
 votelist.addEventListener('click', (event) => {
@@ -79,7 +81,7 @@ votelist.addEventListener('click', (event) => {
         })
 
         if (!votes.length) {
-            console.log('Нельзя отправить!')
+            alert('Выделите хотя бы один вариант!')
         } else {
             socket.send(JSON.stringify({
                 id: dropdown.querySelector('.votelist_dropdown__checkbox').id,
