@@ -4,7 +4,8 @@ async function makeVote(event) {
 
 let count = 0;
 
-export default function makeVoteForm() {
+export default function makeVoteForm(event) {
+    event.preventDefault();
     document.querySelector('.main').insertAdjacentHTML('beforeend', `
         <form class="form" onsubmit="makeVote(event)" onclick="makeVariant(event)">
             <button type="button" class="form_close" onclick="removeForm()">x</button>
@@ -36,3 +37,7 @@ function makeVariant(event) {
         `)
     }
 }
+
+window.makeVoteForm = makeVoteForm;
+window.makeVariant = makeVariant;
+window.makeVote = makeVote;

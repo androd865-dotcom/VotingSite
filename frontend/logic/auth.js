@@ -21,7 +21,7 @@ async function login(event) {
     })
     if (response.ok) {
         if (username === 'admin123') document.querySelector('.header_auth').innerHTML = `
-            <button class="header_auth__button" onclick="makeVoteForm()">Создать голосование</button>
+            <button class="header_auth__button" onclick="makeVoteForm(event)">Создать голосование</button>
         `
         else document.querySelector('.header_auth').innerHTML = username;
         const oldForm = document.querySelector('.form');
@@ -114,3 +114,8 @@ function removeForm() {
         oldForm.remove();
     }
 }
+
+window.login = login;
+window.register = register;
+window.logout = logout;
+window.removeForm = removeForm;
