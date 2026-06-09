@@ -19,7 +19,7 @@ async function makeVote(event) {
     const voteData = {
         type: 'create',
         header: header,
-        many: many,
+        many: (many === 'false') ? false : true,
         variants: variants
     };
 

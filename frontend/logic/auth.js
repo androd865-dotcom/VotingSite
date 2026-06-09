@@ -18,9 +18,14 @@ async function login(event) {
         body: JSON.stringify({username, password})
     })
     if (response.ok) {
-        if (username === 'admin123') document.querySelector('.header_auth').innerHTML = `
+        if (username === 'admin123') {
+            document.querySelector('.header_auth').innerHTML = `
             <button class="header_auth__button" onclick="makeVoteForm(event)">Создать голосование</button>
-        `
+            `
+            document.querySelectorAll('.votelist_dropdown__label').forEach((label) => {
+                label.innerHTML = ''
+            })
+        }
         else document.querySelector('.header_auth').innerHTML = username;
         removeForm();
     } else console.log('Неверный логин или пароль!')
