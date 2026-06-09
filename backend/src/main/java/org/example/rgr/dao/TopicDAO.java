@@ -49,7 +49,7 @@ public class TopicDAO {
     
     public static List<Topic> getAll() throws SQLException {
         List<Topic> topics = new ArrayList<>();
-        String sql = "SELECT * FROM topics ORDER BY id DESC";
+        String sql = "SELECT * FROM topics ORDER BY id";
         
         try (Connection conn = DatabaseUtil.getConnection();
              Statement stmt = conn.createStatement();
@@ -91,7 +91,7 @@ public class TopicDAO {
     
     private static List<Answer> getAnswersByTopicId(int topicId) throws SQLException {
         List<Answer> answers = new ArrayList<>();
-        String sql = "SELECT * FROM answers WHERE topic_id = ?";
+        String sql = "SELECT * FROM answers WHERE topic_id = ? ORDER BY id";
         
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -121,6 +121,73 @@ public class TopicDAO {
         }
     }
     
+    public static void updateMany(int topicId, boolean many) throws SQLException {
+        String sql = "UPDATE topics SET many = ? WHERE id = ?";
+        
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, many ? 1 : 0);
+            pstmt.setInt(2, topicId);
+            pstmt.executeUpdate();
+        }
+    }
+    
+    // Обновление вариантов ответов (старые id сохраняются, новые получают свободные id)
+    public static void updateAnswers(int topicId, List<String> newAnswerNames) throws SQLException {
+        Connection conn = null;
+        try {
+            conn = DatabaseUtil.getConnection();
+            conn.setAutoCommit(false);
+            
+            // Получаем существующие ответы
+            List<Answer> existingAnswers = getAnswersByTopicId(topicId);
+            
+            // Обновляем существующие ответы (сохраняем их id)
+            for (int i = 0; i < existingAnswers.size() && i < newAnswerNames.size(); i++) {
+                String sql = "UPDATE answers SET name_answer = ? WHERE id = ?";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                pstmt.setString(1, newAnswerNames.get(i));
+                pstmt.setInt(2, existingAnswers.get(i).getId());
+                pstmt.executeUpdate();
+                System.out.println("   Обновлен ответ ID=" + existingAnswers.get(i).getId() + 
+                                 " -> \"" + newAnswerNames.get(i) + "\"");
+            }
+            
+            // Если новых ответов больше, чем старых - добавляем (получают новые свободные id)
+            if (newAnswerNames.size() > existingAnswers.size()) {
+                String sqlInsert = "INSERT INTO answers (name_answer, topic_id, count) VALUES (?, ?, 0)";
+                PreparedStatement pstmt = conn.prepareStatement(sqlInsert);
+                for (int i = existingAnswers.size(); i < newAnswerNames.size(); i++) {
+                    pstmt.setString(1, newAnswerNames.get(i));
+                    pstmt.setInt(2, topicId);
+                    pstmt.executeUpdate();
+                    System.out.println("   Добавлен новый ответ: \"" + newAnswerNames.get(i) + "\"");
+                }
+            }
+            
+            // Если старых ответов больше, чем новых - удаляем лишние
+            if (existingAnswers.size() > newAnswerNames.size()) {
+                String sqlDelete = "DELETE FROM answers WHERE id = ?";
+                PreparedStatement pstmt = conn.prepareStatement(sqlDelete);
+                for (int i = newAnswerNames.size(); i < existingAnswers.size(); i++) {
+                    pstmt.setInt(1, existingAnswers.get(i).getId());
+                    pstmt.executeUpdate();
+                    System.out.println("   Удален ответ ID=" + existingAnswers.get(i).getId() + 
+                                     " (\"" + existingAnswers.get(i).getNameAnswer() + "\")");
+                }
+            }
+            
+            conn.commit();
+            System.out.println("✅ Ответы для темы ID=" + topicId + " обновлены");
+            
+        } catch (SQLException e) {
+            if (conn != null) conn.rollback();
+            throw e;
+        } finally {
+            if (conn != null) conn.close();
+        }
+    }
+    
     public static void delete(int topicId) throws SQLException {
         String sql = "DELETE FROM topics WHERE id = ?";
         
@@ -128,6 +195,7 @@ public class TopicDAO {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, topicId);
             pstmt.executeUpdate();
+            System.out.println("🗑️ Тема ID=" + topicId + " удалена (ответы удалены каскадно)");
         }
     }
 }

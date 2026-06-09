@@ -7,6 +7,7 @@ import org.example.rgr.service.TopicService;
 import org.example.rgr.service.VoteService;
 import org.example.rgr.dao.UserDAO;
 import org.example.rgr.dao.TopicDAO;
+import org.example.rgr.dao.VoteDAO;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -49,9 +50,10 @@ public class VotingWebSocketServer extends WebSocketServer {
         try {
             Map<String, Object> request = gson.fromJson(message, Map.class);
             
-            // Проверяем, что это запрос на создание голосования
-            if (request.containsKey("nameQuestion") && request.containsKey("namesAnswers")) {
-                handleCreateVoting(conn, request);
+            // 🔥 ПРОВЕРКА НА НАЛИЧИЕ КОМАНДЫ (create, update, delete)
+            if (request.containsKey("type")) {
+                String command = (String) request.get("type");
+                handleCommand(conn, command, request);
             } else if (request.containsKey("action")) {
                 String action = (String) request.get("action");
                 handleAction(conn, action, request);
@@ -67,66 +69,194 @@ public class VotingWebSocketServer extends WebSocketServer {
         }
     }
     
-    // 🔥 ОБРАБОТЧИК СОЗДАНИЯ ГОЛОСОВАНИЯ
-    private void handleCreateVoting(WebSocket conn, Map<String, Object> request) {
+    // 🔥 ОБРАБОТКА КОМАНД create, update, delete
+    private void handleCommand(WebSocket conn, String command, Map<String, Object> request) {
         User user = sessions.get(conn);
         
-        // Проверка на авторизацию и права админа
+        // Проверка авторизации
         if (user == null) {
             sendError(conn, "Необходимо авторизоваться");
             return;
         }
         
+        // Проверка прав администратора
         if (!user.getLogin().equals("admin123")) {
-            sendError(conn, "Доступ запрещен. Только администратор может создавать голосования");
+            sendError(conn, "Доступ запрещен. Только администратор может выполнять эту операцию");
             return;
         }
         
+        switch (command) {
+            case "create":
+                handleCreate(conn, request);
+                break;
+            case "update":
+                handleUpdate(conn, request);
+                break;
+            case "delete":
+                handleDelete(conn, request);
+                break;
+            default:
+                sendError(conn, "Неизвестная команда: " + command);
+        }
+    }
+    
+    // 🔥 CREATE - создание нового голосования
+    // Формат: { type: "create", header: "...", many: true/false, variants: ["...", "..."] }
+    private void handleCreate(WebSocket conn, Map<String, Object> request) {
         try {
-            // Получаем данные от фронта
-            String nameQuestion = (String) request.get("nameQuestion");
-            boolean many = (boolean) request.get("many");
-            List<String> namesAnswers = (List<String>) request.get("namesAnswers");
+            String header = (String) request.get("header");
+            Boolean many = (Boolean) request.get("many");
+            List<String> variants = (List<String>) request.get("variants");
             
-            System.out.println("📝 Админ создает голосование:");
-            System.out.println("   Название: " + nameQuestion);
+            System.out.println("📝 CREATE: Создание голосования");
+            System.out.println("   Заголовок: " + header);
             System.out.println("   Множественный выбор: " + many);
-            System.out.println("   Варианты: " + namesAnswers);
+            System.out.println("   Варианты: " + variants);
             
-            // Валидация данных
-            if (nameQuestion == null || nameQuestion.trim().isEmpty()) {
-                sendError(conn, "Введите название голосования");
+            // Валидация
+            if (header == null || header.trim().isEmpty()) {
+                sendError(conn, "Введите заголовок голосования");
                 return;
             }
             
-            if (namesAnswers == null || namesAnswers.size() < 2) {
+            if (variants == null || variants.size() < 2) {
                 sendError(conn, "Добавьте минимум 2 варианта ответа");
                 return;
             }
             
-            // Сохраняем в базу данных
-            int topicId = TopicDAO.create(nameQuestion, many, namesAnswers);
+            // Сохраняем в БД
+            int topicId = TopicDAO.create(header, many, variants);
             
             if (topicId > 0) {
-                System.out.println("✅ Голосование успешно создано! ID: " + topicId);
+                System.out.println("✅ Голосование создано! ID: " + topicId);
                 
-                // Отправляем подтверждение админу
                 Map<String, Object> response = new HashMap<>();
-                response.put("type", "VOTING_CREATED");
-                response.put("message", "Голосование \"" + nameQuestion + "\" успешно создано!");
-                response.put("topicId", topicId);
+                response.put("type", "CREATE_SUCCESS");
+                response.put("message", "Голосование \"" + header + "\" успешно создано!");
+                response.put("id", topicId);
                 conn.send(gson.toJson(response));
                 
-                // 🔥 ОБНОВЛЯЕМ ВСЕХ ПОДКЛЮЧЕННЫХ КЛИЕНТОВ
+                // Обновляем всех клиентов
                 sendAllVotesToAll();
             } else {
-                sendError(conn, "Ошибка при сохранении голосования в базу данных");
+                sendError(conn, "Ошибка при сохранении голосования");
             }
             
         } catch (Exception e) {
-            System.err.println("❌ Ошибка создания голосования: " + e.getMessage());
-            e.printStackTrace();
-            sendError(conn, "Ошибка создания голосования: " + e.getMessage());
+            System.err.println("❌ Ошибка CREATE: " + e.getMessage());
+            sendError(conn, "Ошибка создания: " + e.getMessage());
+        }
+    }
+    
+    // 🔥 UPDATE - обновление существующего голосования
+    // Формат: { type: "update", id: 1, header: "...", many: true/false, variants: ["...", "..."] }
+    private void handleUpdate(WebSocket conn, Map<String, Object> request) {
+        try {
+            Integer id = null;
+            if (request.containsKey("id")) {
+                id = ((Double) request.get("id")).intValue();
+            }
+            
+            String header = (String) request.get("header");
+            Boolean many = (Boolean) request.get("many");
+            List<String> variants = (List<String>) request.get("variants");
+            
+            System.out.println("📝 UPDATE: Обновление голосования ID=" + id);
+            System.out.println("   Новый заголовок: " + header);
+            System.out.println("   Множественный выбор: " + many);
+            System.out.println("   Варианты: " + variants);
+            
+            // Валидация
+            if (id == null) {
+                sendError(conn, "Укажите ID голосования для обновления");
+                return;
+            }
+            
+            if (header == null || header.trim().isEmpty()) {
+                sendError(conn, "Введите заголовок голосования");
+                return;
+            }
+            
+            if (variants == null || variants.size() < 2) {
+                sendError(conn, "Добавьте минимум 2 варианта ответа");
+                return;
+            }
+            
+            // Проверяем, существует ли тема
+            var existingTopic = TopicDAO.getById(id);
+            if (existingTopic == null) {
+                sendError(conn, "Голосование с ID=" + id + " не найдено");
+                return;
+            }
+            
+            // Обновляем заголовок темы
+            TopicDAO.updateName(id, header);
+            
+            // Обновляем флаг many
+            TopicDAO.updateMany(id, many);
+            
+            // Обновляем варианты ответов (сохраняя старые id, новые получают свободные id)
+            TopicDAO.updateAnswers(id, variants);
+            
+            System.out.println("✅ Голосование ID=" + id + " обновлено!");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("type", "UPDATE_SUCCESS");
+            response.put("message", "Голосование \"" + header + "\" успешно обновлено!");
+            response.put("id", id);
+            conn.send(gson.toJson(response));
+            
+            // Обновляем всех клиентов
+            sendAllVotesToAll();
+            
+        } catch (Exception e) {
+            System.err.println("❌ Ошибка UPDATE: " + e.getMessage());
+            sendError(conn, "Ошибка обновления: " + e.getMessage());
+        }
+    }
+    
+    // 🔥 DELETE - удаление голосования
+    // Формат: { type: "delete", id: 1 }
+    private void handleDelete(WebSocket conn, Map<String, Object> request) {
+        try {
+            Integer id = null;
+            if (request.containsKey("id")) {
+                id = ((Double) request.get("id")).intValue();
+            }
+            
+            System.out.println("📝 DELETE: Удаление голосования ID=" + id);
+            
+            if (id == null) {
+                sendError(conn, "Укажите ID голосования для удаления");
+                return;
+            }
+            
+            // Проверяем, существует ли тема
+            var existingTopic = TopicDAO.getById(id);
+            if (existingTopic == null) {
+                sendError(conn, "Голосование с ID=" + id + " не найдено");
+                return;
+            }
+            
+            String deletedHeader = existingTopic.getNameQuestion();
+            
+            // Удаляем тему (ответы удалятся каскадно)
+            TopicDAO.delete(id);
+            
+            System.out.println("✅ Голосование ID=" + id + " удалено!");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("type", "DELETE_SUCCESS");
+            response.put("message", "Голосование \"" + deletedHeader + "\" успешно удалено!");
+            response.put("id", id);
+            conn.send(gson.toJson(response));
+            
+            // Обновляем всех клиентов
+            sendAllVotesToAll();
+            
+        } catch (Exception e) {
+            System.err.println("❌ Ошибка DELETE: " + e.getMessage());
+            sendError(conn, "Ошибка удаления: " + e.getMessage());
         }
     }
     
@@ -141,15 +271,6 @@ public class VotingWebSocketServer extends WebSocketServer {
             case "get_topics":
                 User user = sessions.get(conn);
                 sendAllVotes(conn, user);
-                break;
-            case "create_topic":
-                handleCreateTopic(conn, request);
-                break;
-            case "delete_topic":
-                handleDeleteTopic(conn, request);
-                break;
-            case "update_topic":
-                handleUpdateTopic(conn, request);
                 break;
             default:
                 sendError(conn, "Неизвестное действие: " + action);
@@ -216,63 +337,6 @@ public class VotingWebSocketServer extends WebSocketServer {
         }
     }
     
-    private void handleCreateTopic(WebSocket conn, Map<String, Object> request) {
-        User user = sessions.get(conn);
-        if (user == null || !user.getLogin().equals("admin123")) {
-            sendError(conn, "Доступ запрещен. Требуются права администратора");
-            return;
-        }
-        
-        String nameQuestion = (String) request.get("name_question");
-        boolean many = (boolean) request.get("many");
-        List<String> answers = (List<String>) request.get("answers");
-        
-        TopicService.TopicResult result = topicService.createTopic(nameQuestion, many, answers, user.getId());
-        
-        if (result.isSuccess()) {
-            sendAllVotesToAll();
-        } else {
-            sendError(conn, result.getMessage());
-        }
-    }
-    
-    private void handleDeleteTopic(WebSocket conn, Map<String, Object> request) {
-        User user = sessions.get(conn);
-        if (user == null || !user.getLogin().equals("admin123")) {
-            sendError(conn, "Доступ запрещен. Требуются права администратора");
-            return;
-        }
-        
-        int topicId = ((Double) request.get("topicId")).intValue();
-        
-        TopicService.TopicResult result = topicService.deleteTopic(topicId, user.getId());
-        
-        if (result.isSuccess()) {
-            sendAllVotesToAll();
-        } else {
-            sendError(conn, result.getMessage());
-        }
-    }
-    
-    private void handleUpdateTopic(WebSocket conn, Map<String, Object> request) {
-        User user = sessions.get(conn);
-        if (user == null || !user.getLogin().equals("admin123")) {
-            sendError(conn, "Доступ запрещен. Требуются права администратора");
-            return;
-        }
-        
-        int topicId = ((Double) request.get("topicId")).intValue();
-        String newName = (String) request.get("name_question");
-        
-        TopicService.TopicResult result = topicService.updateTopicName(topicId, newName, user.getId());
-        
-        if (result.isSuccess()) {
-            sendAllVotesToAll();
-        } else {
-            sendError(conn, result.getMessage());
-        }
-    }
-    
     private void sendAllVotes(WebSocket conn, User user) {
         try {
             int userId = (user != null) ? user.getId() : -1;
@@ -330,8 +394,10 @@ public class VotingWebSocketServer extends WebSocketServer {
         System.out.println("📍 Адрес: ws://localhost:8000");
         System.out.println("📝 Администратор: login=admin123, password=123adm");
         System.out.println("========================================");
-        System.out.println("💡 Формат для создания голосования:");
-        System.out.println("   { nameQuestion: '...', many: true/false, namesAnswers: ['...', '...'] }");
+        System.out.println("💡 Форматы команд:");
+        System.out.println("   CREATE: { type: 'create', header: '...', many: true/false, variants: [...] }");
+        System.out.println("   UPDATE: { type: 'update', id: 1, header: '...', many: true/false, variants: [...] }");
+        System.out.println("   DELETE: { type: 'delete', id: 1 }");
         System.out.println("========================================");
     }
 }
