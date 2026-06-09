@@ -3,6 +3,7 @@ package org.example.rgr.service;
 import org.example.rgr.dao.TopicDAO;
 import org.example.rgr.dao.UserDAO;
 import org.example.rgr.model.Topic;
+import org.example.rgr.model.User; 
 import org.example.rgr.model.Answer;
 import org.example.rgr.model.VoteData;
 import java.util.*;
@@ -34,17 +35,25 @@ public class TopicService {
         public Object getData() { return data; }
     }
     
-    // Формирует данные для фронта с учетом проголосованных тем
+    // Формирует данные для фронта
     public List<VoteData> getAllVotesForFrontend(int userId) {
         try {
             List<Topic> topics = TopicDAO.getAll();
             List<VoteData> voteDataList = new ArrayList<>();
             
-            // Получаем список тем, за которые пользователь уже проголосовал
-            List<Integer> votedTopics = userId > 0 ? UserDAO.getById(userId).getVotedTopics() : new ArrayList<>();
+            List<Integer> votedTopics = new ArrayList<>();
+            if (userId > 0) {
+                try {
+                    User user = UserDAO.getById(userId);
+                    if (user != null) {
+                        votedTopics = user.getVotedTopics();
+                    }
+                } catch (Exception e) {
+                    System.err.println("Ошибка получения votedTopics: " + e.getMessage());
+                }
+            }
             
             for (Topic topic : topics) {
-                // Создаем массив variants
                 List<Map<String, Object>> variants = new ArrayList<>();
                 for (Answer answer : topic.getAnswers()) {
                     Map<String, Object> variant = new HashMap<>();
@@ -53,7 +62,6 @@ public class TopicService {
                     variants.add(variant);
                 }
                 
-                // Добавляем флаг hasVoted - знает ли фронт, что пользователь уже голосовал
                 boolean hasVoted = votedTopics.contains(topic.getId());
                 
                 VoteData voteData = new VoteData(
@@ -61,7 +69,7 @@ public class TopicService {
                     topic.getNameQuestion(),
                     topic.isMany(),
                     variants,
-                    hasVoted  // ← новый флаг для фронта
+                    hasVoted
                 );
                 voteDataList.add(voteData);
             }
@@ -74,7 +82,6 @@ public class TopicService {
         }
     }
     
-    // Остальные методы без изменений...
     public TopicResult createTopic(String nameQuestion, boolean many, List<String> answerNames, int adminId) {
         try {
             if (adminId != 1) {
@@ -88,7 +95,7 @@ public class TopicService {
             }
             
             int topicId = TopicDAO.create(nameQuestion, many, answerNames);
-            return TopicResult.success(topicId, "Голосование \"" + nameQuestion + "\" создано!");
+            return TopicResult.success(topicId, "Голосование создано!");
             
         } catch (Exception e) {
             return TopicResult.error("Ошибка создания: " + e.getMessage());
@@ -98,7 +105,7 @@ public class TopicService {
     public TopicResult deleteTopic(int topicId, int adminId) {
         try {
             if (adminId != 1) {
-                return TopicResult.error("Доступ запрещен. Только администратор");
+                return TopicResult.error("Доступ запрещен");
             }
             
             Topic topic = TopicDAO.getById(topicId);
@@ -107,7 +114,7 @@ public class TopicService {
             }
             
             TopicDAO.delete(topicId);
-            return TopicResult.success(null, "Голосование \"" + topic.getNameQuestion() + "\" удалено");
+            return TopicResult.success(null, "Голосование удалено");
             
         } catch (Exception e) {
             return TopicResult.error("Ошибка удаления: " + e.getMessage());
@@ -117,14 +124,14 @@ public class TopicService {
     public TopicResult updateTopicName(int topicId, String newName, int adminId) {
         try {
             if (adminId != 1) {
-                return TopicResult.error("Доступ запрещен. Только администратор");
+                return TopicResult.error("Доступ запрещен");
             }
             if (newName == null || newName.trim().isEmpty()) {
                 return TopicResult.error("Введите новое название");
             }
             
             TopicDAO.updateName(topicId, newName);
-            return TopicResult.success(null, "Название обновлено на \"" + newName + "\"");
+            return TopicResult.success(null, "Название обновлено");
             
         } catch (Exception e) {
             return TopicResult.error("Ошибка обновления: " + e.getMessage());

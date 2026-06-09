@@ -17,8 +17,6 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-
-
 public class VotingWebSocketServer extends WebSocketServer {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<WebSocket, User> sessions = new ConcurrentHashMap<>();
@@ -36,7 +34,7 @@ public class VotingWebSocketServer extends WebSocketServer {
         System.out.println("✅ Новое подключение: " + conn.getRemoteSocketAddress());
         sessions.put(conn, null);
         
-        // Отправляем все голосования (без авторизации - только просмотр)
+        // Отправляем ТОЛЬКО массив голосований
         sendAllVotes(conn, null);
     }
     
@@ -44,8 +42,9 @@ public class VotingWebSocketServer extends WebSocketServer {
     public void onMessage(WebSocket conn, String message) {
         System.out.println("📨 Получено: " + message);
         
+        // При приветствии отправляем ТОЛЬКО массив голосований (без CONNECTED)
         if (message.equals("Привет, сервер!")) {
-            sendMessage(conn, "CONNECTED", "Сервер подключен!", null);
+            sendAllVotes(conn, sessions.get(conn));
             return;
         }
         
@@ -101,12 +100,8 @@ public class VotingWebSocketServer extends WebSocketServer {
         
         if (result.isSuccess()) {
             sessions.put(conn, result.getUser());
-            sendMessage(conn, "AUTH_SUCCESS", result.getMessage(), result.getUser());
-            
-            // После входа отправляем обновленный список тем с флагом hasVoted
+            // После входа отправляем ТОЛЬКО обновленный массив
             sendAllVotes(conn, result.getUser());
-            
-            broadcastToAll("USER_JOINED", "Пользователь " + login + " присоединился", null);
         } else {
             sendError(conn, result.getMessage());
         }
@@ -118,9 +113,7 @@ public class VotingWebSocketServer extends WebSocketServer {
         
         AuthService.AuthResult result = authService.register(login, password);
         
-        if (result.isSuccess()) {
-            sendMessage(conn, "REGISTER_SUCCESS", result.getMessage(), result.getUser());
-        } else {
+        if (!result.isSuccess()) {
             sendError(conn, result.getMessage());
         }
     }
@@ -149,13 +142,8 @@ public class VotingWebSocketServer extends WebSocketServer {
             VoteService.VoteResult result = voteService.processVote(user.getId(), topicId, answerIds);
             
             if (result.isSuccess()) {
-                sendMessage(conn, "VOTE_SUCCESS", result.getMessage(), result.getData());
-                
-                // Обновляем пользователя в сессии (обновленный список votedTopics)
                 User updatedUser = UserDAO.getById(user.getId());
                 sessions.put(conn, updatedUser);
-                
-                // Отправляем обновленный список всем клиентам
                 sendAllVotesToAll();
             } else {
                 sendError(conn, result.getMessage());
@@ -179,7 +167,6 @@ public class VotingWebSocketServer extends WebSocketServer {
         TopicService.TopicResult result = topicService.createTopic(nameQuestion, many, answers, user.getId());
         
         if (result.isSuccess()) {
-            sendMessage(conn, "TOPIC_CREATED", result.getMessage(), null);
             sendAllVotesToAll();
         } else {
             sendError(conn, result.getMessage());
@@ -198,7 +185,6 @@ public class VotingWebSocketServer extends WebSocketServer {
         TopicService.TopicResult result = topicService.deleteTopic(topicId, user.getId());
         
         if (result.isSuccess()) {
-            sendMessage(conn, "TOPIC_DELETED", result.getMessage(), null);
             sendAllVotesToAll();
         } else {
             sendError(conn, result.getMessage());
@@ -218,24 +204,28 @@ public class VotingWebSocketServer extends WebSocketServer {
         TopicService.TopicResult result = topicService.updateTopicName(topicId, newName, user.getId());
         
         if (result.isSuccess()) {
-            sendMessage(conn, "TOPIC_UPDATED", result.getMessage(), null);
             sendAllVotesToAll();
         } else {
             sendError(conn, result.getMessage());
         }
     }
     
-    // Отправка всех голосований с учетом проголосованных тем пользователя
+    // 🔥 Отправляем ТОЛЬКО массив голосований
     private void sendAllVotes(WebSocket conn, User user) {
-        int userId = (user != null) ? user.getId() : -1;
-        List<VoteData> votes = topicService.getAllVotesForFrontend(userId);
-        String jsonResponse = gson.toJson(votes);
-        conn.send(jsonResponse);
-        System.out.println("📤 Отправлено " + votes.size() + " голосований" + 
-                          (user != null ? " для пользователя " + user.getLogin() : " (гость)"));
+        try {
+            int userId = (user != null) ? user.getId() : -1;
+            List<VoteData> votes = topicService.getAllVotesForFrontend(userId);
+            String jsonResponse = gson.toJson(votes);
+            conn.send(jsonResponse);
+            System.out.println("📤 Отправлено " + votes.size() + " голосований" + 
+                              (user != null ? " для " + user.getLogin() : " (гость)"));
+        } catch (Exception e) {
+            System.err.println("❌ Ошибка отправки: " + e.getMessage());
+            conn.send("[]");
+        }
     }
     
-    // Отправка обновлений всем клиентам
+    // 🔥 Отправляем обновления всем клиентам
     private void sendAllVotesToAll() {
         for (Map.Entry<WebSocket, User> entry : sessions.entrySet()) {
             WebSocket conn = entry.getKey();
@@ -245,27 +235,6 @@ public class VotingWebSocketServer extends WebSocketServer {
             conn.send(gson.toJson(votes));
         }
         System.out.println("📤 Обновление отправлено всем (" + sessions.size() + " клиентов)");
-    }
-    
-    private void sendMessage(WebSocket conn, String type, String message, Object data) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("type", type);
-        response.put("message", message);
-        response.put("data", data);
-        response.put("timestamp", System.currentTimeMillis());
-        conn.send(gson.toJson(response));
-    }
-    
-    private void broadcastToAll(String type, String message, Object data) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("type", type);
-        response.put("message", message);
-        response.put("data", data);
-        response.put("timestamp", System.currentTimeMillis());
-        String json = gson.toJson(response);
-        for (WebSocket conn : sessions.keySet()) {
-            conn.send(json);
-        }
     }
     
     private void sendError(WebSocket conn, String errorMessage) {
@@ -280,7 +249,7 @@ public class VotingWebSocketServer extends WebSocketServer {
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         User user = sessions.remove(conn);
         if (user != null) {
-            broadcastToAll("USER_LEFT", "Пользователь " + user.getLogin() + " покинул чат", null);
+            System.out.println("👋 Пользователь " + user.getLogin() + " отключился");
         }
         System.out.println("❌ Отключение: " + conn.getRemoteSocketAddress());
     }
@@ -300,8 +269,8 @@ public class VotingWebSocketServer extends WebSocketServer {
         System.out.println("📍 Адрес: ws://localhost:8000");
         System.out.println("📝 Администратор: login=admin123, password=123adm");
         System.out.println("========================================");
-        System.out.println("💡 Формат для фронта:");
-        System.out.println("   [ { id, header, many, hasVoted, variants: [{id, name}] } ]");
+        System.out.println("💡 Отправляется ТОЛЬКО массив голосований:");
+        System.out.println("   [{id, header, many, hasVoted, variants: [{id, name}]}]");
         System.out.println("========================================");
     }
 }

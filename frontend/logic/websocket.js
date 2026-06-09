@@ -18,24 +18,27 @@ function renderVote(data) {
         }
     }
 
-    votelist.innerHTML = `${votelist.innerHTML} +   
+    votelist.innerHTML = `${votelist.innerHTML}   
             <li class="votelist_dropdown">
                 <input type="checkbox" id=${data.id} class="votelist_dropdown__checkbox">
                 <label for=${data.id} class="votelist_dropdown__label">${data.header}</label>
                 <ul class="votelist_dropdown__content">
                     ${variants}
+                    <li>
+                        <button class="votelist_content__vote">Проголосовать</button>
+                    </li>
                 </ul>
             </li>
    `;
 }
 
-const socket = new WebSocket('ws://localhost:8000/websocket')
+const socket = new WebSocket('ws://localhost:8000')
 const votelist = document.querySelector('.votelist');
 
 socket.addEventListener('open', (event) => {
     console.log('Подключение установлено!');
     socket.send('Привет, сервер!');
-
+    console.log(event.data)
 
 })
 

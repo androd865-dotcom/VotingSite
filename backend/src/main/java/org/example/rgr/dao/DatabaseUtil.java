@@ -13,7 +13,6 @@ public class DatabaseUtil {
     }
     
     public static void initializeDatabase() {
-        // 1. Таблица пользователей
         String createUsersTable = """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +22,6 @@ public class DatabaseUtil {
             )
         """;
         
-        // 2. Таблица тем
         String createTopicsTable = """
             CREATE TABLE IF NOT EXISTS topics (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +31,6 @@ public class DatabaseUtil {
             )
         """;
         
-        // 3. Таблица ответов
         String createAnswersTable = """
             CREATE TABLE IF NOT EXISTS answers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,7 +44,6 @@ public class DatabaseUtil {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             
-            // Создаем таблицы
             stmt.execute(createUsersTable);
             stmt.execute(createTopicsTable);
             stmt.execute(createAnswersTable);
@@ -65,7 +61,6 @@ public class DatabaseUtil {
                 System.out.println("✅ Админ создан: login=admin123, pass=123adm");
             }
             
-            // Создаем тестовые темы, если их нет
             createSampleTopics(conn);
             
             System.out.println("✅ База данных инициализирована!");
@@ -77,7 +72,6 @@ public class DatabaseUtil {
     
     private static void createSampleTopics(Connection conn) {
         try {
-            // Проверяем, есть ли уже темы
             String checkTopics = "SELECT COUNT(*) FROM topics";
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(checkTopics);
@@ -85,64 +79,52 @@ public class DatabaseUtil {
             if (rs.next() && rs.getInt(1) == 0) {
                 System.out.println("📝 Создаем тестовые темы голосования...");
                 
-                // ===== ТЕМА 1: Каких животных ты любишь? (many=1 - множественный выбор) =====
+                // Тема 1
                 String insertTopic1 = "INSERT INTO topics (name_question, many, count_of_users) VALUES (?, ?, 0)";
                 PreparedStatement pstmt1 = conn.prepareStatement(insertTopic1, Statement.RETURN_GENERATED_KEYS);
                 pstmt1.setString(1, "Каких животных ты любишь?");
-                pstmt1.setInt(2, 1); // many=1 - можно выбрать несколько вариантов
+                pstmt1.setInt(2, 1);
                 pstmt1.executeUpdate();
                 
                 ResultSet topicKeys1 = pstmt1.getGeneratedKeys();
                 int topicId1 = topicKeys1.next() ? topicKeys1.getInt(1) : -1;
                 
                 if (topicId1 != -1) {
-                    // Варианты ответов для темы 1
                     List<String> answers1 = Arrays.asList("кошки", "собаки");
                     String insertAnswer = "INSERT INTO answers (name_answer, topic_id, count) VALUES (?, ?, 0)";
                     PreparedStatement answerStmt = conn.prepareStatement(insertAnswer);
-                    
                     for (String answer : answers1) {
                         answerStmt.setString(1, answer);
                         answerStmt.setInt(2, topicId1);
                         answerStmt.executeUpdate();
                     }
-                    System.out.println("   ✅ Тема 1: 'Каких животных ты любишь?' (множественный выбор)");
-                    System.out.println("      - кошки");
-                    System.out.println("      - собаки");
+                    System.out.println("   ✅ Тема 1: 'Каких животных ты любишь?'");
                 }
                 
-                // ===== ТЕМА 2: Какое покрытие лучше? (many=0 - одиночный выбор) =====
+                // Тема 2
                 String insertTopic2 = "INSERT INTO topics (name_question, many, count_of_users) VALUES (?, ?, 0)";
                 PreparedStatement pstmt2 = conn.prepareStatement(insertTopic2, Statement.RETURN_GENERATED_KEYS);
                 pstmt2.setString(1, "Какое покрытие лучше?");
-                pstmt2.setInt(2, 0); // many=0 - только один вариант
+                pstmt2.setInt(2, 0);
                 pstmt2.executeUpdate();
                 
                 ResultSet topicKeys2 = pstmt2.getGeneratedKeys();
                 int topicId2 = topicKeys2.next() ? topicKeys2.getInt(1) : -1;
                 
                 if (topicId2 != -1) {
-                    // Варианты ответов для темы 2
                     List<String> answers2 = Arrays.asList("ламинат", "паркет", "линолеум");
                     String insertAnswer = "INSERT INTO answers (name_answer, topic_id, count) VALUES (?, ?, 0)";
                     PreparedStatement answerStmt = conn.prepareStatement(insertAnswer);
-                    
                     for (String answer : answers2) {
                         answerStmt.setString(1, answer);
                         answerStmt.setInt(2, topicId2);
                         answerStmt.executeUpdate();
                     }
-                    System.out.println("   ✅ Тема 2: 'Какое покрытие лучше?' (одиночный выбор)");
-                    System.out.println("      - ламинат");
-                    System.out.println("      - паркет");
-                    System.out.println("      - линолеум");
+                    System.out.println("   ✅ Тема 2: 'Какое покрытие лучше?'");
                 }
                 
                 System.out.println("✅ Тестовые темы успешно созданы!");
-            } else {
-                System.out.println("📋 Темы уже существуют, пропускаем создание.");
             }
-            
         } catch (SQLException e) {
             System.err.println("⚠️ Ошибка при создании тестовых тем: " + e.getMessage());
         }
