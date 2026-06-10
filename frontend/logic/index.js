@@ -126,21 +126,51 @@ export async function updateVote(event) {
         }
     }
 
-    const radioOne = document.querySelector('#form_radio__one');
-    const many = radioOne ? !radioOne.checked : true;
+    // Правильно определяем many
+    const radioMany = document.querySelector('#form_radio__many');
+    const many = radioMany ? radioMany.checked : false;
 
+    // Сохраняем состояние голосования пользователя
+    const oldVoteElement = document.querySelector(`.votelist_dropdown[data-vote-id="${voteId}"]`);
+    let hasVoted = false;
+    if (oldVoteElement) {
+        const oldButton = oldVoteElement.querySelector('.votelist_content__vote');
+        hasVoted = oldButton && oldButton.disabled;
+    }
+
+    // Обновляем данные с сохранением состояния голосования
     const updatedVote = {
         id: Number(voteId),
         header: header,
         variants: variants.map((name, index) => ({
-            id: index,
+            id: index + 1,
             name: name
         })),
-        many: many
+        many: many,
     };
 
+    // Перерисовываем
     renderVote(updatedVote);
 
+    // Восстанавливаем состояние кнопки
+    if (hasVoted && window.config?.votedTopics) {
+        if (!window.config.votedTopics.includes(Number(voteId))) {
+            window.config.votedTopics.push(Number(voteId));
+        }
+
+        setTimeout(() => {
+            const newVoteElement = document.querySelector(`.votelist_dropdown[data-vote-id="${voteId}"]`);
+            if (newVoteElement) {
+                const newButton = newVoteElement.querySelector('.votelist_content__vote');
+                if (newButton) {
+                    newButton.disabled = true;
+                    newButton.textContent = 'Вы уже проголосовали';
+                }
+            }
+        }, 20);
+    }
+
+    // Отправляем запрос на сервер
     socket.send(JSON.stringify({
         type: 'update',
         id: Number(voteId),

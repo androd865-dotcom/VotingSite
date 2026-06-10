@@ -20,6 +20,7 @@ async function login(event) {
         const userInfoResponse = await fetch(`http://localhost:3000/api/user/${username}`);
         const userData = await userInfoResponse.json();
 
+        // Сохраняем базовую конфигурацию
         window.config = {
             authorized: true,
             username: username,
@@ -28,24 +29,31 @@ async function login(event) {
             userId: userData.id
         };
 
-        // 🔥 ВАЖНО: Авторизуемся в WebSocket
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({
-                action: 'auth',
-                login: username,
-                password: password
-            }));
-        } else {
-            socket.addEventListener('open', () => {
+        // Функция для отправки auth в WebSocket
+        const sendAuth = () => {
+            if (socket && socket.readyState === WebSocket.OPEN) {
                 socket.send(JSON.stringify({
                     action: 'auth',
                     login: username,
                     password: password
                 }));
-            });
-        }
+                console.log('🔐 WebSocket auth отправлен для:', username);
+            } else {
+                console.log('⏳ Ожидание открытия WebSocket...');
+                socket.addEventListener('open', () => {
+                    socket.send(JSON.stringify({
+                        action: 'auth',
+                        login: username,
+                        password: password
+                    }));
+                }, { once: true });
+            }
+        };
 
-        // Обновляем UI...
+        // Отправляем auth в WebSocket
+        sendAuth();
+
+        // Обновляем UI
         if (username === 'admin123') {
             document.querySelector('.header_auth').innerHTML = `
                 <button class="header_auth__button" onclick="makeVoteForm(event)">Создать голосование</button>
@@ -54,10 +62,14 @@ async function login(event) {
             document.querySelector('.header_auth').innerHTML = username;
         }
 
-        refreshAllVotes();
+        // Закрываем форму
         removeForm();
+
+
+
     } else {
-        alert('Неверный логин или пароль!');
+        const error = await response.json();
+        alert(error.error || 'Неверный логин или пароль!');
     }
 }
 

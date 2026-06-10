@@ -85,7 +85,7 @@ body {
 }
 
 .votelist_dropdown__checkbox:checked ~ .votelist_dropdown__content {
-    max-height: 300px;
+    max-height: 1000vh ;
     opacity: 1;
     transform: translateY(0);
     padding: 10px 0;
@@ -238,6 +238,28 @@ body {
     display: flex;
     gap: 5px;
     padding-right: 10px;
+}
+
+.form_radioContainer {
+    display: flex;
+    align-items: center; /* Выравнивание по вертикали */
+    gap: 4px; /* Небольшой отступ между элементами */
+}
+
+.form_radio__label {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+}
+
+.form_radio {
+    margin: 0;
+    padding: 0;
+    vertical-align: middle;
 }
 
 .form_header {
