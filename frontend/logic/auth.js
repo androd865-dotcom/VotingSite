@@ -6,44 +6,69 @@ async function login(event) {
 
     const form = event.target;
     const formData = new FormData(form);
-
     const username = formData.get('username');
     const password = formData.get('password');
 
     const response = await fetch('http://localhost:3000/api/login', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({username, password})
-    })
+    });
+
     if (response.ok) {
+        // Получаем данные пользователя
+        const userInfoResponse = await fetch(`http://localhost:3000/api/user/${username}`);
+        const userData = await userInfoResponse.json();
+
+        window.config = {
+            authorized: true,
+            username: username,
+            isAdmin: username === 'admin123',
+            votedTopics: userData.votedTopics || [],
+            userId: userData.id
+        };
+
+        // 🔥 ВАЖНО: Авторизуемся в WebSocket
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                action: 'auth',
+                login: username,
+                password: password
+            }));
+        } else {
+            console.log('⚠️ WebSocket еще не готов, ждем...');
+            socket.addEventListener('open', () => {
+                socket.send(JSON.stringify({
+                    action: 'auth',
+                    login: username,
+                    password: password
+                }));
+            });
+        }
+
+        // Обновляем UI...
         if (username === 'admin123') {
-            window.config = { isAdmin: true,  authorized: true};
-            Object.freeze(config);
-            window.isAdmin = true;
             document.querySelector('.header_auth').innerHTML = `
-            <button class="header_auth__button" onclick="makeVoteForm(event)">Создать голосование</button>
-            `
-
-            document.querySelectorAll('.votelist_dropdown__label').forEach((label) => {
-                label.innerHTML = `<div class="votelist_label__header">${label.innerHTML}</div>
-                <div class="votelist_label__admin">
-                    <button type="button">
-                        <img src="../assets/edit.ico" alt="Иконка редактирования" class="votelist_admin__edit" onclick="editVote(event)">
-                    </button>
-                    <button type="button" class="votelist_admin__delete" onclick="deleteVote(event)">x</button>
-                </div>`
-            })
-        }
-        else {
+                <button class="header_auth__button" onclick="makeVoteForm(event)">Создать голосование</button>
+            `;
+        } else {
             document.querySelector('.header_auth').innerHTML = username;
-            window.config = { isAdmin: false,  authorized: true};
-            Object.freeze(config);
         }
-        removeForm();
 
-    } else alert('Неверный логин или пароль!')
+        refreshAllVotes();
+        removeForm();
+    } else {
+        alert('Неверный логин или пароль!');
+    }
+}
+
+async function refreshAllVotes() {
+    const response = await fetch('http://localhost:3000/api/votes');
+    const votes = await response.json();
+
+    const votelist = document.querySelector('.votelist');
+    votelist.innerHTML = '';
+    votes.forEach(vote => renderVote(vote));
 }
 
 async function register(event) {

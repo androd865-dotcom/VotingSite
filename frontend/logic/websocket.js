@@ -1,47 +1,69 @@
-function renderVote(data) {
+export function renderVote(data) {
     let variants = ''
     for (let i = 0; i < data.variants.length; i++) {
         if (data.many) {
             variants = variants + `
                 <li class="votelist_content__list">
                     <input type="checkbox" class="votelist_content__checkbox" id="votelist_content__checkbox${data.variants[i].id}"/>
-                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${data.variants[i].id}">${data.variants[i].name}</label>
+                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${data.variants[i].id}">${escapeHtml(data.variants[i].name)}</label>
                 </li>
             `
         } else {
             variants = variants + `
                 <li class="votelist_content__list">
-                    <input type="radio" class="votelist_content__checkbox" id="votelist_content__checkbox${data.variants[i].id}" name=${data.id} />
-                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${data.variants[i].id}">${data.variants[i].name}</label>
+                    <input type="radio" class="votelist_content__checkbox" id="votelist_content__checkbox${data.variants[i].id}" name="${data.id}" />
+                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${data.variants[i].id}">${escapeHtml(data.variants[i].name)}</label>
                 </li>
             `
         }
     }
 
-    const adminButtons = window.config?.isAdmin ? `
-        <div class="votelist_label__admin">
-            <button type="button" onclick="editVote(event)">
-                <img src="../assets/edit.ico" alt="Иконка редактирования" class="votelist_admin__edit">
-            </button>
-            <button type="button" class="votelist_admin__delete" onclick="deleteVote(event)">x</button>
-        </div>
-    ` : '';
+    // Проверяем, голосовал ли пользователь
+    const hasVoted = window.config?.authorized && window.config.votedTopics?.includes(data.id);
+    const isAdmin = window.config?.isAdmin || false;
 
-    votelist.innerHTML = `${votelist.innerHTML}   
-        <li class="votelist_dropdown">
-            <input type="checkbox" id=${data.id} class="votelist_dropdown__checkbox">
-            <label for=${data.id} class="votelist_dropdown__label">
-                <div class="votelist_label__header">${data.header}</div>
-                ${adminButtons}
+    const voteHtml = `
+        <li class="votelist_dropdown" data-vote-id="${data.id}">
+            <input type="checkbox" id="${data.id}" class="votelist_dropdown__checkbox">
+            <label for="${data.id}" class="votelist_dropdown__label">
+                <div class="votelist_label__header">${escapeHtml(data.header)}</div>
+                ${isAdmin ? `
+                    <div class="votelist_label__admin">
+                        <button type="button" onclick="editVote(event)">
+                            <img src="../assets/edit.ico" alt="Иконка редактирования" class="votelist_admin__edit">
+                        </button>
+                        <button type="button" class="votelist_admin__delete" onclick="deleteVote(event)">x</button>
+                    </div>
+                ` : ''}
             </label>
             <ul class="votelist_dropdown__content">
                 ${variants}
                 <li>
-                    <button class="votelist_content__vote">Проголосовать</button>
+                    <button class="votelist_content__vote" ${hasVoted ? 'disabled' : ''}>
+                        ${hasVoted ? '✓ Вы уже проголосовали' : 'Проголосовать'}
+                    </button>
                 </li>
             </ul>
         </li>
     `;
+
+    const existingVote = document.querySelector(`.votelist_dropdown input[id="${data.id}"]`)?.closest('.votelist_dropdown');
+
+    if (existingVote) {
+        existingVote.outerHTML = voteHtml;
+    } else {
+        document.querySelector('.votelist').insertAdjacentHTML('beforeend', voteHtml);
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 const socket = new WebSocket('ws://localhost:8000')
@@ -53,22 +75,34 @@ socket.addEventListener('open', (event) => {
 })
 
 socket.addEventListener('message', (event) => {
-    console.log('Получены данные от сервера!');
-    const json = event.data;
+    const data = JSON.parse(event.data);
 
-    console.log('Данные от сервера:', json);
-    const data = JSON.parse(json);
-
-    if (Array.isArray(data))
-        data.forEach(vote => renderVote(vote))
-
-    else renderVote(data)
-
-})
-
-socket.addEventListener('error', (event) => {
-    console.error('Ошибка WebSocket');
-})
+    // Если пришел массив голосований
+    if (Array.isArray(data)) {
+        const votelist = document.querySelector('.votelist');
+        votelist.innerHTML = '';
+        data.forEach(vote => renderVote(vote));
+    }
+    else if (data.id && data.header) {
+        renderVote(data);
+    }
+    else if (data.type === 'vote_success') {
+        if (window.config?.authorized && data.topicId) {
+            if (!window.config.votedTopics.includes(data.topicId)) {
+                window.config.votedTopics.push(data.topicId);
+            }
+            const voteElement = document.querySelector(`.votelist_dropdown[data-vote-id="${data.topicId}"]`);
+            if (voteElement) {
+                const voteButton = voteElement.querySelector('.votelist_content__vote');
+                if (voteButton) {
+                    voteButton.disabled = true;
+                    voteButton.textContent = 'Вы уже проголосовали';
+                }
+            }
+        }
+        alert(data.message || 'Голос учтен!');
+    }
+});
 
 socket.addEventListener('close', (event) => {
     if (event.wasClean) 
@@ -76,32 +110,44 @@ socket.addEventListener('close', (event) => {
     else 
         console.log('Соединение сброшено');
 
-    console.log(`Код: ${event.code}, причина: ${event.reason}`);
 })
 
 votelist.addEventListener('click', (event) => {
     const button = event.target.closest('.votelist_content__vote');
-    if (button) {
-        event.preventDefault();
-        const dropdown = button.closest('.votelist_dropdown');
-        const checkedInputs = dropdown.querySelectorAll('.votelist_content__checkbox:checked');
+    if (!button) return;
 
-        const votes = Array.from(checkedInputs).map(input => {
-            return Number(input.id.replace('votelist_content__checkbox', ''));
-        })
+    event.preventDefault();
 
-        if (!votes.length) {
-            console.log('Нельзя отправить!')
-        } else {
-            socket.send(JSON.stringify({
-                id: dropdown.querySelector('.votelist_dropdown__checkbox').id,
-                votes: votes
-            }))
-        }
-        console.log(JSON.stringify({
-            id: dropdown.querySelector('.votelist_dropdown__checkbox').id,
+    if (button.disabled) {
+        alert('Вы уже голосовали в этом опросе!');
+        return;
+    }
+
+    const dropdown = button.closest('.votelist_dropdown');
+    const voteId = Number(dropdown.querySelector('.votelist_dropdown__checkbox').id);
+    const checkedInputs = dropdown.querySelectorAll('.votelist_content__checkbox:checked');
+
+    const votes = Array.from(checkedInputs).map(input => {
+        return Number(input.id.replace('votelist_content__checkbox', ''));
+    });
+
+    if (!votes.length) {
+        alert('Выберите хотя бы один вариант!');
+        return;
+    }
+
+    if (window.config?.authorized && window.config.votedTopics?.includes(voteId)) {
+        alert('Вы уже голосовали в этом опросе!');
+        return;
+    }
+
+    if (window.config?.authorized) {
+        socket.send(JSON.stringify({
+            id: voteId,
             votes: votes
         }));
+    } else {
+        alert('Необходимо авторизоваться!');
     }
 });
 

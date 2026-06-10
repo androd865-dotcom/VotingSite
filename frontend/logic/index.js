@@ -129,24 +129,17 @@ export async function updateVote(event) {
     const radioOne = document.querySelector('#form_radio__one');
     const many = radioOne ? !radioOne.checked : true;
 
-    const oldVoteItem = document.querySelector(`.votelist_dropdown input[id="${voteId}"]`)?.closest('.votelist_dropdown');
+    const updatedVote = {
+        id: Number(voteId),
+        header: header,
+        variants: variants.map((name, index) => ({
+            id: index,
+            name: name
+        })),
+        many: many
+    };
 
-    if (oldVoteItem) {
-        const updatedVote = {
-            id: Number(voteId),
-            header: header,
-            variants: variants.map((name, index) => ({
-                id: index,
-                name: name
-            })),
-            many: many
-        };
-
-        const temp = document.createElement('div');
-        temp.innerHTML = renderVoteToString(updatedVote); // Нужна новая функция
-
-        oldVoteItem.outerHTML = temp.firstElementChild.outerHTML;
-    }
+    renderVote(updatedVote);
 
     socket.send(JSON.stringify({
         type: 'update',
@@ -157,40 +150,6 @@ export async function updateVote(event) {
     }));
 
     removeForm();
-}
-
-function renderVoteToString(data) {
-    let variants = ''
-    for (let i = 0; i < data.variants.length; i++) {
-        if (data.many) {
-            variants = variants + `
-                <li class="votelist_content__list">
-                    <input type="checkbox" class="votelist_content__checkbox" id="votelist_content__checkbox${data.variants[i].id}"/>
-                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${data.variants[i].id}">${data.variants[i].name}</label>
-                </li>
-            `
-        } else {
-            variants = variants + `
-                <li class="votelist_content__list">
-                    <input type="radio" class="votelist_content__checkbox" id="votelist_content__checkbox${data.variants[i].id}" name=${data.id} />
-                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${data.variants[i].id}">${data.variants[i].name}</label>
-                </li>
-            `
-        }
-    }
-
-    return `
-        <li class="votelist_dropdown">
-            <input type="checkbox" id=${data.id} class="votelist_dropdown__checkbox">
-            <label for=${data.id} class="votelist_dropdown__label">${data.header}</label>
-            <ul class="votelist_dropdown__content">
-                ${variants}
-                <li>
-                    <button class="votelist_content__vote">Проголосовать</button>
-                </li>
-            </ul>
-        </li>
-    `;
 }
 
 export async function editVote(event) {

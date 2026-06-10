@@ -133,14 +133,14 @@ public class UserDAO {
     public static void addVotedTopic(int userId, int topicId) throws SQLException {
         User user = getUserById(userId);
         if (user == null) return;
-        
+
         if (!user.getVotedTopics().contains(topicId)) {
             user.getVotedTopics().add(topicId);
         }
-        
+
         String newVotedTopicsJson = gson.toJson(user.getVotedTopics());
         String sql = "UPDATE users SET voted_topics = ? WHERE id = ?";
-        
+
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, newVotedTopicsJson);

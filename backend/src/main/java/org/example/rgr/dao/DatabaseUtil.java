@@ -7,11 +7,11 @@ import java.util.Arrays;
 
 public class DatabaseUtil {
     private static final String DB_URL = "jdbc:sqlite:voting.db";
-    
+
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL);
     }
-    
+
     public static void initializeDatabase() {
         String createUsersTable = """
             CREATE TABLE IF NOT EXISTS users (
@@ -21,7 +21,7 @@ public class DatabaseUtil {
                 voted_topics TEXT DEFAULT '[]'
             )
         """;
-        
+
         String createTopicsTable = """
             CREATE TABLE IF NOT EXISTS topics (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,7 +30,7 @@ public class DatabaseUtil {
                 count_of_users INTEGER DEFAULT 0
             )
         """;
-        
+
         String createAnswersTable = """
             CREATE TABLE IF NOT EXISTS answers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,14 +40,14 @@ public class DatabaseUtil {
                 FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
             )
         """;
-        
+
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
-            
+
             stmt.execute(createUsersTable);
             stmt.execute(createTopicsTable);
             stmt.execute(createAnswersTable);
-            
+
             // Создаем админа
             String checkAdmin = "SELECT COUNT(*) FROM users WHERE login = 'admin123'";
             ResultSet rs = stmt.executeQuery(checkAdmin);
@@ -60,35 +60,35 @@ public class DatabaseUtil {
                 pstmt.executeUpdate();
                 System.out.println("✅ Админ создан: login=admin123, pass=123adm");
             }
-            
+
             createSampleTopics(conn);
-            
+
             System.out.println("✅ База данных инициализирована!");
-            
+
         } catch (SQLException e) {
             System.err.println("❌ Ошибка БД: " + e.getMessage());
         }
     }
-    
+
     private static void createSampleTopics(Connection conn) {
         try {
             String checkTopics = "SELECT COUNT(*) FROM topics";
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(checkTopics);
-            
+
             if (rs.next() && rs.getInt(1) == 0) {
                 System.out.println("📝 Создаем тестовые темы голосования...");
-                
+
                 // Тема 1
                 String insertTopic1 = "INSERT INTO topics (name_question, many, count_of_users) VALUES (?, ?, 0)";
                 PreparedStatement pstmt1 = conn.prepareStatement(insertTopic1, Statement.RETURN_GENERATED_KEYS);
                 pstmt1.setString(1, "Каких животных ты любишь?");
                 pstmt1.setInt(2, 1);
                 pstmt1.executeUpdate();
-                
+
                 ResultSet topicKeys1 = pstmt1.getGeneratedKeys();
                 int topicId1 = topicKeys1.next() ? topicKeys1.getInt(1) : -1;
-                
+
                 if (topicId1 != -1) {
                     List<String> answers1 = Arrays.asList("кошки", "собаки");
                     String insertAnswer = "INSERT INTO answers (name_answer, topic_id, count) VALUES (?, ?, 0)";
@@ -100,17 +100,17 @@ public class DatabaseUtil {
                     }
                     System.out.println("   ✅ Тема 1: 'Каких животных ты любишь?'");
                 }
-                
+
                 // Тема 2
                 String insertTopic2 = "INSERT INTO topics (name_question, many, count_of_users) VALUES (?, ?, 0)";
                 PreparedStatement pstmt2 = conn.prepareStatement(insertTopic2, Statement.RETURN_GENERATED_KEYS);
                 pstmt2.setString(1, "Какое покрытие лучше?");
                 pstmt2.setInt(2, 0);
                 pstmt2.executeUpdate();
-                
+
                 ResultSet topicKeys2 = pstmt2.getGeneratedKeys();
                 int topicId2 = topicKeys2.next() ? topicKeys2.getInt(1) : -1;
-                
+
                 if (topicId2 != -1) {
                     List<String> answers2 = Arrays.asList("ламинат", "паркет", "линолеум");
                     String insertAnswer = "INSERT INTO answers (name_answer, topic_id, count) VALUES (?, ?, 0)";
@@ -122,7 +122,7 @@ public class DatabaseUtil {
                     }
                     System.out.println("   ✅ Тема 2: 'Какое покрытие лучше?'");
                 }
-                
+
                 System.out.println("✅ Тестовые темы успешно созданы!");
             }
         } catch (SQLException e) {

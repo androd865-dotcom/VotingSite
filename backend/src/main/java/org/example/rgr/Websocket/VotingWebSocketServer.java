@@ -323,10 +323,6 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
     // ГОЛОСОВАНИЕ - С ПРОВЕРКОЙ АВТОРИЗАЦИИ
     private void handleVote(WebSocket conn, Map<String, Object> request) {
         User user = sessions.get(conn);
-        if (user == null) {
-            sendError(conn, "Необходимо авторизоваться для голосования");
-            return;
-        }
         
         try {
             int topicId = ((Double) request.get("id")).intValue();
