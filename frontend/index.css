@@ -2,6 +2,9 @@ body {
     background-color: rgb(154, 86, 218);
 }
 
+/* ==================== */
+/* HEADER               */
+/* ==================== */
 .header {
     background-color: rgba(231, 209, 14, 0.973);
     display: flex;
@@ -12,22 +15,110 @@ body {
     padding: 0 20px 0 15px;
 }
 
-
+/* Основной контейнер аутентификации */
 .header_auth {
-    display: flex;
-    justify-content: space-between;
     font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 10px;
+    height: 100%;
 }
 
+.header_auth li {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* Элементы хедера */
+.header_auth__item {
+    display: flex;
+    align-items: center;
+}
+
+.header_auth__user {
+    margin: 0 10px;
+}
+
+/* Имя пользователя */
+.header_auth__username {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+    font-weight: 500;
+    font-size: 20px;
+    padding: 0 12px;
+    background: #f5f5f5;
+    border-radius: 15px;
+    height: 32px;
+    line-height: 1;
+}
+
+/* Кнопки хедера */
 .header_auth__button {
-    background-color: rgb(94, 247, 94);
-    height: 6vh;
-    border-radius: 35px;
-    text-align: center;
-    margin-left: 10px;
-    padding: 0px 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+    height: 32px;
+    line-height: 1;
+    transition: all 0.3s ease;
 }
 
+.header_auth__button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Кнопка "Создать голосование" */
+.header_auth__create {
+    background: #2196F3;
+}
+
+.header_auth__create:hover {
+    background: #1976D2;
+}
+
+/* Кнопка "Выйти" */
+.header_auth__logout {
+    background: #f44336;
+}
+
+.header_auth__logout:hover {
+    background: #d32f2f;
+}
+
+/* Кнопки Войти и Зарегистрироваться */
+#login {
+    background: #4CAF50;
+}
+
+#login:hover {
+    background: #45a049;
+}
+
+#register {
+    background: #FF9800;
+}
+
+#register:hover {
+    background: #F57C00;
+}
+
+/* ==================== */
+/* VOTELIST             */
+/* ==================== */
 .votelist {
     display: flex;
     flex-direction: column;
@@ -43,7 +134,6 @@ body {
 .votelist_dropdown__checkbox {
     display: none;
 }
-
 
 .votelist_dropdown__label {
     display: flex;
@@ -85,7 +175,7 @@ body {
 }
 
 .votelist_dropdown__checkbox:checked ~ .votelist_dropdown__content {
-    max-height: 1000vh ;
+    max-height: 1000vh;
     opacity: 1;
     transform: translateY(0);
     padding: 10px 0;
@@ -118,6 +208,21 @@ body {
     transition: background-color 0.2s ease;
 }
 
+/* Админские кнопки в голосовании */
+.votelist_label__admin {
+    display: flex;
+    gap: 7px;
+    text-align: center;
+}
+
+.votelist_admin__edit {
+    width: 20px;
+    height: 20px;
+}
+
+/* ==================== */
+/* FORM                 */
+/* ==================== */
 .form {
     position: fixed;
     top: 50%;
@@ -220,7 +325,6 @@ body {
     width: 100%;
     display: flex;
     justify-content: center;
-
 }
 
 .form_makeVariant__plus {
@@ -236,14 +340,9 @@ body {
 
 .form_radioContainer {
     display: flex;
-    gap: 5px;
+    align-items: center;
+    gap: 4px;
     padding-right: 10px;
-}
-
-.form_radioContainer {
-    display: flex;
-    align-items: center; /* Выравнивание по вертикали */
-    gap: 4px; /* Небольшой отступ между элементами */
 }
 
 .form_radio__label {
@@ -265,12 +364,6 @@ body {
 .form_header {
     display: flex;
     justify-content: space-between;
-}
-
-.votelist_label__admin {
-    display: flex;
-    gap: 7px;
-    text-align: center;
 }
 
 .form_variantItem {
@@ -311,7 +404,105 @@ body {
     transform: scale(0.95);
 }
 
-.votelist_admin__edit {
-    width: 20px;
-    height: 20px;
+/* ==================== */
+/* RESULTS              */
+/* ==================== */
+.votelist_results {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.votelist_result__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 0 5px;
+}
+
+.votelist_result__label {
+    min-width: 100px;
+    max-width: 150px;
+    font-size: 14px;
+    word-break: break-word;
+}
+
+.votelist_result__barContainer {
+    flex: 1;
+    height: 24px;
+    background: #f0f0f0;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.votelist_result__bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #45a049);
+    border-radius: 12px;
+    transition: width 0.5s ease-in-out;
+    min-width: 0;
+}
+
+.votelist_result__percent {
+    min-width: 50px;
+    text-align: right;
+    font-weight: bold;
+    font-size: 14px;
+    color: #333;
+}
+
+.votelist_results__total {
+    text-align: center;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+    color: #666;
+    font-size: 14px;
+}
+
+.votelist_loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Разные цвета для полосок */
+.votelist_result__item:nth-child(1) .votelist_result__bar {
+    background: linear-gradient(90deg, #4CAF50, #45a049);
+}
+
+.votelist_result__item:nth-child(2) .votelist_result__bar {
+    background: linear-gradient(90deg, #2196F3, #1976D2);
+}
+
+.votelist_result__item:nth-child(3) .votelist_result__bar {
+    background: linear-gradient(90deg, #FF9800, #F57C00);
+}
+
+.votelist_result__item:nth-child(4) .votelist_result__bar {
+    background: linear-gradient(90deg, #9C27B0, #7B1FA2);
+}
+
+.votelist_result__item:nth-child(5) .votelist_result__bar {
+    background: linear-gradient(90deg, #F44336, #D32F2F);
+}
+
+/* Анимация появления результатов */
+.votelist_dropdown--results .votelist_results {
+    animation: resultFadeIn 0.3s ease-in;
+}
+
+@keyframes resultFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
