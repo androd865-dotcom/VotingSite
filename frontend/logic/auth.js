@@ -36,7 +36,6 @@ async function login(event) {
                 password: password
             }));
         } else {
-            console.log('⚠️ WebSocket еще не готов, ждем...');
             socket.addEventListener('open', () => {
                 socket.send(JSON.stringify({
                     action: 'auth',

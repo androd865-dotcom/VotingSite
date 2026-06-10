@@ -76,8 +76,7 @@ socket.addEventListener('open', (event) => {
 
 socket.addEventListener('message', (event) => {
     const data = JSON.parse(event.data);
-
-    // Если пришел массив голосований
+    console.log(data)
     if (Array.isArray(data)) {
         const votelist = document.querySelector('.votelist');
         votelist.innerHTML = '';
