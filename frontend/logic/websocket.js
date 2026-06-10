@@ -1,36 +1,20 @@
 export function renderVote(data) {
     let variants = ''
-    const groupName = `vote_${data.id}`; // Уникальное имя группы
-
     for (let i = 0; i < data.variants.length; i++) {
         if (data.many) {
-            variants += `
+            variants = variants + `
                 <li class="votelist_content__list">
-                    <input type="checkbox" 
-                           class="votelist_content__checkbox" 
-                           id="votelist_content__checkbox${data.id}_${data.variants[i].id}"
-                           name="${groupName}"
-                           value="${data.variants[i].id}"/>
-                    <label class="votelist_content__checkboxDescription" 
-                           for="votelist_content__checkbox${data.id}_${data.variants[i].id}">
-                        ${escapeHtml(data.variants[i].name)}
-                    </label>
+                    <input type="checkbox" class="votelist_content__checkbox" id="votelist_content__checkbox${data.variants[i].id}"/>
+                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${data.variants[i].id}">${escapeHtml(data.variants[i].name)}</label>
                 </li>
-            `;
+            `
         } else {
-            variants += `
+            variants = variants + `
                 <li class="votelist_content__list">
-                    <input type="radio" 
-                           class="votelist_content__checkbox" 
-                           id="votelist_content__checkbox${data.id}_${data.variants[i].id}" 
-                           name="${groupName}"
-                           value="${data.variants[i].id}"/>
-                    <label class="votelist_content__checkboxDescription" 
-                           for="votelist_content__checkbox${data.id}_${data.variants[i].id}">
-                        ${escapeHtml(data.variants[i].name)}
-                    </label>
+                    <input type="radio" class="votelist_content__checkbox" id="votelist_content__checkbox${data.variants[i].id}" name="${data.id}" />
+                    <label class="votelist_content__checkboxDescription" for="votelist_content__checkbox${data.variants[i].id}">${escapeHtml(data.variants[i].name)}</label>
                 </li>
-            `;
+            `
         }
     }
 
@@ -66,32 +50,17 @@ export function renderVote(data) {
     const existingVote = document.querySelector(`.votelist_dropdown input[id="${data.id}"]`)?.closest('.votelist_dropdown');
 
     if (existingVote) {
-        // Временно скрываем для пересчета стилей
-        existingVote.style.opacity = '0';
         existingVote.outerHTML = voteHtml;
-
-        // Принудительно пересчитываем стили для нового элемента
-        requestAnimationFrame(() => {
-            const newElement = document.querySelector(`.votelist_dropdown[data-vote-id="${data.id}"]`);
-            if (newElement) {
-                newElement.style.opacity = '1';
-                // Принудительный reflow
-                newElement.offsetHeight;
-            }
-        });
     } else {
         document.querySelector('.votelist').insertAdjacentHTML('beforeend', voteHtml);
     }
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+// Вспомогательная функция для экранирования HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 const socket = new WebSocket('ws://localhost:8000')

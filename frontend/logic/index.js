@@ -113,19 +113,27 @@ export async function updateVote(event) {
         }
     }
 
-    // Правильно определяем many
-    const radioMany = document.querySelector('#form_radio__many');
-    const many = radioMany ? radioMany.checked : false;
+    const radioOne = document.querySelector('#form_radio__one');
+    const many = radioOne ? !radioOne.checked : true;
 
-    // Сохраняем состояние голосования пользователя
-    const oldVoteElement = document.querySelector(`.votelist_dropdown[data-vote-id="${voteId}"]`);
-    let hasVoted = false;
-    if (oldVoteElement) {
-        const oldButton = oldVoteElement.querySelector('.votelist_content__vote');
-        hasVoted = oldButton && oldButton.disabled;
+    // Удаляем голосование из votedTopics, так как оно изменилось
+    if (window.config?.votedTopics) {
+        const index = window.config.votedTopics.indexOf(Number(voteId));
+        if (index > -1) {
+            window.config.votedTopics.splice(index, 1);
+        }
     }
 
-    // Обновляем данные с сохранением состояния голосования
+    // Отправляем запрос на сервер для сброса голосов
+    socket.send(JSON.stringify({
+        type: 'update',
+        id: Number(voteId),
+        header: header,
+        variants: variants,
+        many: many
+    }));
+
+    // Обновляем данные
     const updatedVote = {
         id: Number(voteId),
         header: header,
@@ -136,35 +144,18 @@ export async function updateVote(event) {
         many: many,
     };
 
-    // Перерисовываем
+    // Перерисовываем (hasVoted будет false, так как мы удалили из votedTopics)
     renderVote(updatedVote);
 
-    // Восстанавливаем состояние кнопки
-    if (hasVoted && window.config?.votedTopics) {
-        if (!window.config.votedTopics.includes(Number(voteId))) {
-            window.config.votedTopics.push(Number(voteId));
+    // Принудительно обновляем стили
+    setTimeout(() => {
+        const voteContainer = document.querySelector(`.votelist_dropdown[data-vote-id="${voteId}"]`);
+        if (voteContainer) {
+            voteContainer.style.display = 'none';
+            voteContainer.offsetHeight;
+            voteContainer.style.display = '';
         }
-
-        setTimeout(() => {
-            const newVoteElement = document.querySelector(`.votelist_dropdown[data-vote-id="${voteId}"]`);
-            if (newVoteElement) {
-                const newButton = newVoteElement.querySelector('.votelist_content__vote');
-                if (newButton) {
-                    newButton.disabled = true;
-                    newButton.textContent = 'Вы уже проголосовали';
-                }
-            }
-        }, 20);
-    }
-
-    // Отправляем запрос на сервер
-    socket.send(JSON.stringify({
-        type: 'update',
-        id: Number(voteId),
-        header: header,
-        variants: variants,
-        many: many
-    }));
+    }, 10);
 
     removeForm();
 }
