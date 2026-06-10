@@ -82,8 +82,31 @@ function makeVariant(event) {
     }
 }
 
+export async function deleteVote(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log('deleteVote')
+    if (event.target.classList.contains('votelist_admin__delete')) {
+        const voteItem = event.target.closest('.votelist_dropdown');
 
+        const checkbox = voteItem.querySelector('.votelist_dropdown__checkbox');
+        const voteId = checkbox.id;
+        console.log('voteId: ', voteId)
+        const isConfirmed = confirm("Вы уверены, что хотите удалить голосование?");
+
+        if (!isConfirmed) {
+            return;
+        }
+
+        socket.send(JSON.stringify({
+            type: 'delete',
+            id: Number(voteId)
+        }))
+        voteItem.remove();
+    }
+}
 
 window.makeVoteForm = makeVoteForm;
 window.makeVariant = makeVariant;
 window.makeVote = makeVote;
+window.deleteVote = deleteVote;

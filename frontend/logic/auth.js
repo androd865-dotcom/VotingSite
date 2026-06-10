@@ -1,4 +1,4 @@
-import makeVoteForm from './index.js';
+import makeVoteForm, {deleteVote} from './index.js';
 import removeForm from './removeForm.js';
 
 async function login(event) {
@@ -18,11 +18,24 @@ async function login(event) {
         body: JSON.stringify({username, password})
     })
     if (response.ok) {
-        if (username === 'admin123') document.querySelector('.header_auth').innerHTML = `
+        if (username === 'admin123') {
+            document.querySelector('.header_auth').innerHTML = `
             <button class="header_auth__button" onclick="makeVoteForm(event)">Создать голосование</button>
-        `
+            `
+
+            document.querySelectorAll('.votelist_dropdown__label').forEach((label) => {
+                label.innerHTML = `<div class="votelist_label__header">${label.innerHTML}</div>
+                <div class="votelist_label__admin">
+                    <button type="button">
+                        <img src="../assets/edit.ico" alt="Иконка редактирования" class="votelist_admin__edit">
+                    </button>
+                    <button type="button" class="votelist_admin__delete" onclick="deleteVote(event)">x</button>
+                </div>`
+            })
+        }
         else document.querySelector('.header_auth').innerHTML = username;
         removeForm();
+        
     } else console.log('Неверный логин или пароль!')
 }
 
@@ -35,8 +48,6 @@ async function register(event) {
     const username = formData.get('username');
     const password = formData.get('password');
 
-    console.log('Username:', username);
-    console.log('Password:', password)
 
     if (password.length < 5) {console.log("Этот пароль слишком короткий!"); return;}
     const response = await fetch('http://localhost:3000/api/register', {
@@ -67,9 +78,7 @@ function logout(event) {
 }
 
 document.querySelector('#login').addEventListener('click', () => {
-
     removeForm();
-
     document.querySelector('.main').insertAdjacentHTML('beforeend', `
         <form class="form" onsubmit="login(event)">
             <button type="button" class="form_close" onclick="removeForm()">x</button>

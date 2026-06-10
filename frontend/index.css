@@ -244,3 +244,14 @@ body {
     display: flex;
     justify-content: space-between;
 }
+
+.votelist_label__admin {
+    display: flex;
+    gap: 7px;
+    text-align: center;
+}
+
+.votelist_admin__edit {
+    width: 20px;
+    height: 20px;
+}
