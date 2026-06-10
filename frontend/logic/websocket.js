@@ -18,18 +18,30 @@ function renderVote(data) {
         }
     }
 
+    const adminButtons = window.config?.isAdmin ? `
+        <div class="votelist_label__admin">
+            <button type="button" onclick="editVote(event)">
+                <img src="../assets/edit.ico" alt="Иконка редактирования" class="votelist_admin__edit">
+            </button>
+            <button type="button" class="votelist_admin__delete" onclick="deleteVote(event)">x</button>
+        </div>
+    ` : '';
+
     votelist.innerHTML = `${votelist.innerHTML}   
-            <li class="votelist_dropdown">
-                <input type="checkbox" id=${data.id} class="votelist_dropdown__checkbox">
-                <label for=${data.id} class="votelist_dropdown__label">${data.header}</label>
-                <ul class="votelist_dropdown__content">
-                    ${variants}
-                    <li>
-                        <button class="votelist_content__vote">Проголосовать</button>
-                    </li>
-                </ul>
-            </li>
-   `;
+        <li class="votelist_dropdown">
+            <input type="checkbox" id=${data.id} class="votelist_dropdown__checkbox">
+            <label for=${data.id} class="votelist_dropdown__label">
+                <div class="votelist_label__header">${data.header}</div>
+                ${adminButtons}
+            </label>
+            <ul class="votelist_dropdown__content">
+                ${variants}
+                <li>
+                    <button class="votelist_content__vote">Проголосовать</button>
+                </li>
+            </ul>
+        </li>
+    `;
 }
 
 const socket = new WebSocket('ws://localhost:8000')

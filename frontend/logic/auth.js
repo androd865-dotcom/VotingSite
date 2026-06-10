@@ -1,4 +1,4 @@
-import makeVoteForm, {deleteVote} from './index.js';
+import makeVoteForm, {deleteVote, editVote} from './index.js';
 import removeForm from './removeForm.js';
 
 async function login(event) {
@@ -19,6 +19,9 @@ async function login(event) {
     })
     if (response.ok) {
         if (username === 'admin123') {
+            window.config = { isAdmin: true,  authorized: true};
+            Object.freeze(config);
+            window.isAdmin = true;
             document.querySelector('.header_auth').innerHTML = `
             <button class="header_auth__button" onclick="makeVoteForm(event)">Создать голосование</button>
             `
@@ -27,16 +30,20 @@ async function login(event) {
                 label.innerHTML = `<div class="votelist_label__header">${label.innerHTML}</div>
                 <div class="votelist_label__admin">
                     <button type="button">
-                        <img src="../assets/edit.ico" alt="Иконка редактирования" class="votelist_admin__edit">
+                        <img src="../assets/edit.ico" alt="Иконка редактирования" class="votelist_admin__edit" onclick="editVote(event)">
                     </button>
                     <button type="button" class="votelist_admin__delete" onclick="deleteVote(event)">x</button>
                 </div>`
             })
         }
-        else document.querySelector('.header_auth').innerHTML = username;
+        else {
+            document.querySelector('.header_auth').innerHTML = username;
+            window.config = { isAdmin: false,  authorized: true};
+            Object.freeze(config);
+        }
         removeForm();
-        
-    } else console.log('Неверный логин или пароль!')
+
+    } else alert('Неверный логин или пароль!')
 }
 
 async function register(event) {
@@ -49,7 +56,7 @@ async function register(event) {
     const password = formData.get('password');
 
 
-    if (password.length < 5) {console.log("Этот пароль слишком короткий!"); return;}
+    if (password.length < 5) {alert("Этот пароль слишком короткий!"); return;}
     const response = await fetch('http://localhost:3000/api/register', {
         method: 'POST',
         headers: {
@@ -60,7 +67,7 @@ async function register(event) {
     if (response.ok) {
         document.querySelector('.header_auth').innerHTML = username;
 
-    } else console.log('Пользователь с таким именем уже существует!');
+    } else alert('Пользователь с таким именем уже существует!');
     removeForm();
 
 }
