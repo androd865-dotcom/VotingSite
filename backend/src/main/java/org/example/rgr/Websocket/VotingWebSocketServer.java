@@ -437,7 +437,6 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
         }
     }
     
-    // ГОЛОСОВАНИЕ - С ПРОВЕРКОЙ АВТОРИЗАЦИИ И ОТПРАВКОЙ РЕЗУЛЬТАТОВ
     private void handleVote(WebSocket conn, Map<String, Object> request) {
         User user = sessions.get(conn);
 
@@ -488,7 +487,6 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
 
 
 
-    // В классе VotingWebSocketServer добавьте этот метод
     private Map<String, Object> collectVoteStatistics(int topicId) {
         Map<String, Object> statistics = new HashMap<>();
 
@@ -499,14 +497,13 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
             }
 
             List<Answer> answers = topic.getAnswers();
-            int totalVotes = 0;
 
-            // Считаем общее количество голосов
-            for (Answer answer : answers) {
-                totalVotes += answer.getCount();
-            }
+            // Получаем count_of_users напрямую из БД
+            int totalVoters = VoteDAO.getTopicVoteCount(topicId);
 
-            // Формируем результаты по каждому варианту
+            System.out.println("📊 Сбор статистики для голосования ID=" + topicId);
+            System.out.println("   totalVoters (count_of_users): " + totalVoters);
+
             List<Map<String, Object>> results = new ArrayList<>();
             for (Answer answer : answers) {
                 Map<String, Object> result = new HashMap<>();
@@ -514,30 +511,27 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
                 result.put("name", answer.getNameAnswer());
                 result.put("count", answer.getCount());
 
-                // Вычисляем процент
-                double percent = totalVotes > 0 ?
-                    (answer.getCount() * 100.0 / totalVotes) : 0.0;
-                // Округляем до 1 знака после запятой
+                // Вычисляем процент от общего числа проголосовавших
+                double percent = totalVoters > 0 ?
+                    (answer.getCount() * 100.0 / totalVoters) : 0.0;
                 percent = Math.round(percent * 10.0) / 10.0;
                 result.put("percent", percent);
+
+                System.out.println("   - " + answer.getNameAnswer() +
+                                 ": count=" + answer.getCount() +
+                                 ", percent=" + percent + "%");
 
                 results.add(result);
             }
 
             statistics.put("votes", results);
-            statistics.put("totalVotes", totalVotes);
+            statistics.put("totalVotes", totalVoters);
             statistics.put("topicId", topicId);
             statistics.put("header", topic.getNameQuestion());
 
-            System.out.println("📊 Статистика для голосования ID=" + topicId + ":");
-            System.out.println("   Всего голосов: " + totalVotes);
-            for (Map<String, Object> r : results) {
-                System.out.println("   - " + r.get("name") + ": " + r.get("count") +
-                                 " голосов (" + r.get("percent") + "%)");
-            }
-
         } catch (Exception e) {
             System.err.println("❌ Ошибка при сборе статистики: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return statistics;

@@ -34,41 +34,46 @@ public class VoteService {
         public Object getData() { return data; }
     }
     
-    // Обработка голосования
-// Упростите метод, убрав лишние возвращаемые данные
-public VoteResult processVote(int userId, int topicId, List<Integer> answerIds) {
-    try {
-        if (userId <= 0) {
-            return VoteResult.error("Пользователь не авторизован");
+    public VoteResult processVote(int userId, int topicId, List<Integer> answerIds) {
+        try {
+            if (userId <= 0) {
+                return VoteResult.error("Пользователь не авторизован");
+            }
+
+            // Проверяем, не голосовал ли уже пользователь
+            if (UserDAO.hasVoted(userId, topicId)) {
+                return VoteResult.error("Вы уже голосовали за эту тему");
+            }
+
+            Topic topic = TopicDAO.getById(topicId);
+            if (topic == null) {
+                return VoteResult.error("Тема не найдена");
+            }
+
+            // Для одиночного выбора
+            if (!topic.isMany() && answerIds.size() > 1) {
+                return VoteResult.error("Можно выбрать только один вариант");
+            }
+
+            // 🔥 Шаг 1: Увеличиваем count для КАЖДОГО выбранного варианта
+            for (int answerId : answerIds) {
+                VoteDAO.voteForAnswer(answerId);  // Теперь без проверки voted_topics
+            }
+
+            // 🔥 Шаг 2: Увеличиваем count_of_users ОДИН раз
+            VoteDAO.incrementTopicVoteCount(topicId);
+
+            // 🔥 Шаг 3: Добавляем тему в список проголосованных
+            UserDAO.addVotedTopic(userId, topicId);
+
+            System.out.println("✅ Голосование: пользователь " + userId +
+                             " проголосовал за тему " + topicId +
+                             " выбрал варианты: " + answerIds);
+
+            return VoteResult.success(null, "Голос принят!");
+
+        } catch (Exception e) {
+            return VoteResult.error("Ошибка: " + e.getMessage());
         }
-
-        // Проверяем, не голосовал ли уже пользователь
-        if (UserDAO.hasVoted(userId, topicId)) {
-            return VoteResult.error("Вы уже голосовали за эту тему");
-        }
-
-        Topic topic = TopicDAO.getById(topicId);
-        if (topic == null) {
-            return VoteResult.error("Тема не найдена");
-        }
-
-        // Для одиночного выбора
-        if (!topic.isMany() && answerIds.size() > 1) {
-            return VoteResult.error("Можно выбрать только один вариант");
-        }
-
-        // Сохраняем голоса
-        for (int answerId : answerIds) {
-            VoteDAO.vote(userId, topicId, answerId);
-        }
-
-        // Добавляем тему в список проголосованных
-        UserDAO.addVotedTopic(userId, topicId);
-
-        return VoteResult.success(null, "Голос принят!");
-
-    } catch (Exception e) {
-        return VoteResult.error("Ошибка: " + e.getMessage());
     }
-}
 }

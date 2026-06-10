@@ -4,59 +4,29 @@ import java.sql.*;
 
 public class VoteDAO {
 
-    // Голосование за вариант ответа
-    public static boolean vote(int userId, int topicId, int answerId) throws SQLException {
+    // 🔥 Только увеличивает count в answers, без проверки voted_topics
+    public static boolean voteForAnswer(int answerId) throws SQLException {
         return DatabaseUtil.executeWrite(conn -> {
-            // 1. Проверяем, не голосовал ли пользователь за эту тему
-            String checkSql = "SELECT voted_topics FROM users WHERE id = ?";
-            PreparedStatement checkStmt = conn.prepareStatement(checkSql);
-            checkStmt.setInt(1, userId);
-            ResultSet rs = checkStmt.executeQuery();
-
-            if (rs.next()) {
-                String votedTopicsJson = rs.getString("voted_topics");
-                if (votedTopicsJson != null && votedTopicsJson.contains(String.valueOf(topicId))) {
-                    return false; // Уже голосовал
-                }
-            }
-
-            // 2. Увеличиваем count в таблице answers
+            // Увеличиваем count ТОЛЬКО в таблице answers
             String sqlAnswer = "UPDATE answers SET count = count + 1 WHERE id = ?";
             PreparedStatement pstmtAnswer = conn.prepareStatement(sqlAnswer);
             pstmtAnswer.setInt(1, answerId);
-            pstmtAnswer.executeUpdate();
-
-            // 3. Увеличиваем count_of_users в таблице topics
-            String sqlTopic = "UPDATE topics SET count_of_users = count_of_users + 1 WHERE id = ?";
-            PreparedStatement pstmtTopic = conn.prepareStatement(sqlTopic);
-            pstmtTopic.setInt(1, topicId);
-            pstmtTopic.executeUpdate();
-
-            // 4. Обновляем voted_topics у пользователя
-            String updateUserSql = "UPDATE users SET voted_topics = json_insert(voted_topics, '$[' || (SELECT count(*) FROM json_each(voted_topics)) || ']', ?) WHERE id = ?";
-            // Для SQLite без JSON поддержки используем простой вариант:
-            String getCurrentVotes = "SELECT voted_topics FROM users WHERE id = ?";
-            PreparedStatement getStmt = conn.prepareStatement(getCurrentVotes);
-            getStmt.setInt(1, userId);
-            ResultSet rs2 = getStmt.executeQuery();
-
-            if (rs2.next()) {
-                String currentVotes = rs2.getString("voted_topics");
-                if (currentVotes == null || currentVotes.equals("[]")) {
-                    currentVotes = "[" + topicId + "]";
-                } else {
-                    currentVotes = currentVotes.substring(0, currentVotes.length() - 1) + "," + topicId + "]";
-                }
-
-                String updateSql = "UPDATE users SET voted_topics = ? WHERE id = ?";
-                PreparedStatement updateStmt = conn.prepareStatement(updateSql);
-                updateStmt.setString(1, currentVotes);
-                updateStmt.setInt(2, userId);
-                updateStmt.executeUpdate();
-            }
-
-            return true;
+            int updated = pstmtAnswer.executeUpdate();
+            System.out.println("   📊 Answer " + answerId + " count увеличен на 1, строк обновлено: " + updated);
+            return updated > 0;
         });
+    }
+
+    // 🔥 Увеличить count_of_users в topics
+    public static void incrementTopicVoteCount(int topicId) throws SQLException {
+        String sql = "UPDATE topics SET count_of_users = count_of_users + 1 WHERE id = ?";
+
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, topicId);
+            int updated = pstmt.executeUpdate();
+            System.out.println("   📊 Topic " + topicId + " count_of_users увеличен, строк обновлено: " + updated);
+        }
     }
 
     // Получить количество голосов за вариант ответа
