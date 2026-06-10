@@ -273,6 +273,44 @@ body {
     text-align: center;
 }
 
+.form_variantItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.form_variantItem .form_input {
+    flex: 1;
+}
+
+.form_variantRemove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #ff4444;
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 1;
+    padding: 0;
+    transition: background 0.2s;
+    margin-top: -15px;
+}
+
+.form_variantRemove:hover {
+    background: #cc0000;
+}
+
+.form_variantRemove:active {
+    transform: scale(0.95);
+}
+
 .votelist_admin__edit {
     width: 20px;
     height: 20px;

@@ -36,9 +36,9 @@ let count = 0;
 export default function makeVoteForm(event) {
     event.preventDefault();
     removeForm();
-    count = 0;
+
     document.querySelector('.main').insertAdjacentHTML('beforeend', `
-        <form class="form" onsubmit="makeVote(event)" onclick="makeVariant(event)">
+        <form class="form" onsubmit="makeVote(event)">
             <button type="button" class="form_close" onclick="removeForm()">x</button>
             <div class="form_label form_header">
                 <div>Тема опроса</div>
@@ -54,31 +54,18 @@ export default function makeVoteForm(event) {
                 Варианты ответов
             </div>
             <ul class="form_variantsList">
-                <li>
-                    <label for="variant" class="form_label"></label>
-                    <input type="text" id="variant" class="form_input" name="variant" required>
+                <li class="form_variantItem">
+                    <input type="text" id="variant0" class="form_input" name="variant0" required>
                 </li>
-                
             </ul>
             <div class="form_bottomContainer">
-                <div class="form_makeVariant"><button type="button" class="form_makeVariant__plus">+</button></div>
+                <div class="form_makeVariant">
+                    <button type="button" class="form_makeVariant__plus" onclick="addVariantField(event)">+</button>
+                </div>
                 <button type="submit" class="form_button">Создать голосование</button>
             </div>
         </form>
     `);
-}
-
-function makeVariant(event) {
-    if (event.target.classList.contains('form_makeVariant__plus')) {
-        document.querySelector('.form_variantsList').insertAdjacentHTML('beforeend', `
-            <li>
-                <label for="variant${count}" class="form_label"></label>
-                
-                <input type="text" id="variant${count}" class="form_input" name="variant${count++}" required>
-            </li>
-        `)
-        if (count === 7) document.querySelector('.form_makeVariant__plus').remove();
-    }
 }
 
 export async function deleteVote(event) {
@@ -226,8 +213,9 @@ export async function editVote(event) {
             </div>
             <ul class="form_variantsList">
                 ${variants.map((variant, index) => `
-                    <li>
+                    <li class="form_variantItem">
                         <input type="text" class="form_input" name="variant${index}" value="${variant.replace(/"/g, '&quot;')}" required>
+                        ${index > 0 ? '<button type="button" class="form_variantRemove" onclick="removeVariantField(event)" title="Удалить вариант">×</button>' : ''}
                     </li>
                 `).join('')}
             </ul>
@@ -247,9 +235,11 @@ export function addVariantField(event) {
     const currentCount = variantsList.children.length;
 
     if (currentCount < 10) {
+        const newIndex = currentCount;
         variantsList.insertAdjacentHTML('beforeend', `
-            <li>
-                <input type="text" class="form_input" name="variant${currentCount}" required>
+            <li class="form_variantItem">
+                <input type="text" class="form_input" name="variant${newIndex}" required>
+                <button type="button" class="form_variantRemove" onclick="removeVariantField(event)" title="Удалить вариант">×</button>
             </li>
         `);
     }
@@ -260,9 +250,42 @@ export function addVariantField(event) {
     }
 }
 
+// Функция для удаления варианта
+export function removeVariantField(event) {
+    event.preventDefault();
+    const variantItem = event.target.closest('.form_variantItem');
+    if (!variantItem) return;
 
+    const variantsList = document.querySelector('.form_variantsList');
+    variantItem.remove();
+
+    // Показываем кнопку "+", если она была скрыта
+    const plusButton = document.querySelector('.form_makeVariant__plus');
+    if (!plusButton && variantsList.children.length < 10) {
+        const makeVariantDiv = document.querySelector('.form_makeVariant');
+        if (makeVariantDiv) {
+            makeVariantDiv.innerHTML = '<button type="button" class="form_makeVariant__plus" onclick="addVariantField(event)">+</button>';
+        }
+    }
+
+    // Обновляем имена и ID полей
+    updateVariantFields();
+}
+
+// Функция для обновления индексов полей после удаления
+function updateVariantFields() {
+    const variantItems = document.querySelectorAll('.form_variantsList .form_variantItem');
+    variantItems.forEach((item, index) => {
+        const input = item.querySelector('.form_input');
+        if (input) {
+            input.name = `variant${index}`;
+            input.id = `variant${index}`;
+        }
+    });
+}
+
+window.removeVariantField = removeVariantField
 window.makeVoteForm = makeVoteForm;
-window.makeVariant = makeVariant;
 window.makeVote = makeVote;
 window.deleteVote = deleteVote;
 window.editVote = editVote;
