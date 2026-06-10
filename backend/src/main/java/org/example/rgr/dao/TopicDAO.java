@@ -133,52 +133,30 @@ public class TopicDAO {
     }
 
     // Обновление вариантов ответов (старые id сохраняются, новые получают свободные id)
+    // В TopicDAO.java - обновите метод updateAnswers
     public static void updateAnswers(int topicId, List<String> newAnswerNames) throws SQLException {
         Connection conn = null;
         try {
             conn = DatabaseUtil.getConnection();
             conn.setAutoCommit(false);
 
-            // Получаем существующие ответы
-            List<Answer> existingAnswers = getAnswersByTopicId(topicId);
+            // 1. Удаляем старые ответы
+            String sqlDelete = "DELETE FROM answers WHERE topic_id = ?";
+            PreparedStatement pstmtDelete = conn.prepareStatement(sqlDelete);
+            pstmtDelete.setInt(1, topicId);
+            pstmtDelete.executeUpdate();
 
-            // Обновляем существующие ответы (сохраняем их id)
-            for (int i = 0; i < existingAnswers.size() && i < newAnswerNames.size(); i++) {
-                String sql = "UPDATE answers SET name_answer = ? WHERE id = ?";
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-                pstmt.setString(1, newAnswerNames.get(i));
-                pstmt.setInt(2, existingAnswers.get(i).getId());
-                pstmt.executeUpdate();
-                System.out.println("   Обновлен ответ ID=" + existingAnswers.get(i).getId() +
-                                 " -> \"" + newAnswerNames.get(i) + "\"");
-            }
-
-            // Если новых ответов больше, чем старых - добавляем (получают новые свободные id)
-            if (newAnswerNames.size() > existingAnswers.size()) {
-                String sqlInsert = "INSERT INTO answers (name_answer, topic_id, count) VALUES (?, ?, 0)";
-                PreparedStatement pstmt = conn.prepareStatement(sqlInsert);
-                for (int i = existingAnswers.size(); i < newAnswerNames.size(); i++) {
-                    pstmt.setString(1, newAnswerNames.get(i));
-                    pstmt.setInt(2, topicId);
-                    pstmt.executeUpdate();
-                    System.out.println("   Добавлен новый ответ: \"" + newAnswerNames.get(i) + "\"");
-                }
-            }
-
-            // Если старых ответов больше, чем новых - удаляем лишние
-            if (existingAnswers.size() > newAnswerNames.size()) {
-                String sqlDelete = "DELETE FROM answers WHERE id = ?";
-                PreparedStatement pstmt = conn.prepareStatement(sqlDelete);
-                for (int i = newAnswerNames.size(); i < existingAnswers.size(); i++) {
-                    pstmt.setInt(1, existingAnswers.get(i).getId());
-                    pstmt.executeUpdate();
-                    System.out.println("   Удален ответ ID=" + existingAnswers.get(i).getId() +
-                                     " (\"" + existingAnswers.get(i).getNameAnswer() + "\")");
-                }
+            // 2. Вставляем новые ответы с count = 0
+            String sqlInsert = "INSERT INTO answers (name_answer, topic_id, count) VALUES (?, ?, 0)";
+            PreparedStatement pstmtInsert = conn.prepareStatement(sqlInsert);
+            for (String answerName : newAnswerNames) {
+                pstmtInsert.setString(1, answerName);
+                pstmtInsert.setInt(2, topicId);
+                pstmtInsert.executeUpdate();
             }
 
             conn.commit();
-            System.out.println("✅ Ответы для темы ID=" + topicId + " обновлены");
+            System.out.println("   ✅ Ответы для темы ID=" + topicId + " обновлены (голоса обнулены)");
 
         } catch (SQLException e) {
             if (conn != null) conn.rollback();

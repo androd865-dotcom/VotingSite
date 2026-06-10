@@ -2,12 +2,15 @@ package org.example.rgr.websocket;
 
 import org.example.rgr.model.User;
 import org.example.rgr.model.VoteData;
+import org.example.rgr.model.Topic;
+import org.example.rgr.model.Answer;
 import org.example.rgr.service.AuthService;
 import org.example.rgr.service.TopicService;
 import org.example.rgr.service.VoteService;
 import org.example.rgr.dao.UserDAO;
 import org.example.rgr.dao.TopicDAO;
 import org.example.rgr.dao.VoteDAO;
+import org.example.rgr.dao.DatabaseUtil;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -16,6 +19,9 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 import java.net.InetSocketAddress;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -162,6 +168,7 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
 }
     
     // UPDATE - обновление голосования (без проверки авторизации)
+    // UPDATE - обновление голосования с обнулением голосов
     private void handleUpdate(WebSocket conn, Map<String, Object> request) {
         try {
             Integer id = null;
@@ -172,67 +179,169 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
                     id = (Integer) request.get("id");
                 }
             }
-            
+
             String header = (String) request.get("header");
             Boolean many = (Boolean) request.get("many");
             List<String> variants = (List<String>) request.get("variants");
-            
-            // Если many пришло как строка "false"/"true", преобразуем
+
             if (many == null && request.containsKey("many")) {
                 Object manyObj = request.get("many");
                 if (manyObj instanceof String) {
                     many = "true".equalsIgnoreCase((String) manyObj);
                 }
             }
-            
+
             System.out.println("📝 UPDATE: Обновление голосования ID=" + id);
-            System.out.println("   Новый заголовок: " + header);
-            System.out.println("   Множественный выбор: " + many);
-            System.out.println("   Варианты: " + variants);
-            
+
             if (id == null) {
                 sendError(conn, "Укажите ID голосования для обновления");
                 return;
             }
-            
+
             if (header == null || header.trim().isEmpty()) {
                 sendError(conn, "Введите заголовок голосования");
                 return;
             }
-            
+
             if (variants == null || variants.size() < 2) {
                 sendError(conn, "Добавьте минимум 2 варианта ответа");
                 return;
             }
-            
+
             var existingTopic = TopicDAO.getById(id);
             if (existingTopic == null) {
                 sendError(conn, "Голосование с ID=" + id + " не найдено");
                 return;
             }
-            
-            // Обновляем данные
+
+            // 🔥 1. Обнуляем голоса у всех пользователей для этой темы
+            resetVotesForTopic(id);
+
+            // 2. Обновляем данные темы
             TopicDAO.updateName(id, header);
             TopicDAO.updateMany(id, many != null && many);
             TopicDAO.updateAnswers(id, variants);
-            
-            System.out.println("✅ Голосование ID=" + id + " обновлено!");
-            
+
+            // 3. Обнуляем счетчики в answers (уже сделано в updateAnswers? Проверим)
+            // Если updateAnswers не обнуляет count, сделаем это отдельно
+            resetAnswerCounts(id);
+
+            System.out.println("✅ Голосование ID=" + id + " обновлено! Голоса обнулены.");
+
+            // 4. Получаем обновленную тему
+            Topic updatedTopic = TopicDAO.getById(id);
+
+            // 5. Формируем данные для фронта
+            Map<String, Object> updatedVote = new HashMap<>();
+            updatedVote.put("id", updatedTopic.getId());
+            updatedVote.put("header", updatedTopic.getNameQuestion());
+            updatedVote.put("many", updatedTopic.isMany());
+            updatedVote.put("hasVoted", false); // После обновления никто не голосовал
+
+            List<Map<String, Object>> variantsList = new ArrayList<>();
+            for (Answer answer : updatedTopic.getAnswers()) {
+                Map<String, Object> variant = new HashMap<>();
+                variant.put("id", answer.getId());
+                variant.put("name", answer.getNameAnswer());
+                variant.put("count", 0); // Обнуленные счетчики
+                variantsList.add(variant);
+            }
+            updatedVote.put("variants", variantsList);
+
+            // 6. Отправляем обновление ВСЕМ клиентам
             Map<String, Object> response = new HashMap<>();
             response.put("type", "UPDATE_SUCCESS");
-            response.put("message", "Голосование \"" + header + "\" успешно обновлено!");
-            response.put("id", id);
-            conn.send(gson.toJson(response));
-            
-            sendAllVotesToAll();
-            
+            response.put("message", "Голосование \"" + header + "\" успешно обновлено! Голоса обнулены.");
+            response.put("topic", updatedVote);
+            response.put("topicId", id);
+            response.put("timestamp", System.currentTimeMillis());
+
+            for (Map.Entry<WebSocket, User> entry : sessions.entrySet()) {
+                WebSocket client = entry.getKey();
+                if (client.isOpen()) {
+                    client.send(gson.toJson(response));
+
+                    // 🔥 Также обновляем votedTopics у пользователей - удаляем эту тему из списка проголосованных
+                    User user = entry.getValue();
+                    if (user != null && user.getVotedTopics().contains(id)) {
+                        // Обновляем пользователя в сессии
+                        List<Integer> newVotedTopics = new ArrayList<>(user.getVotedTopics());
+                        newVotedTopics.remove(Integer.valueOf(id));
+                        user.setVotedTopics(newVotedTopics);
+                        sessions.put(client, user);
+
+                        // Обновляем в БД
+                        updateUserVotedTopicsInDB(user.getId(), newVotedTopics);
+                    }
+                }
+            }
+
         } catch (Exception e) {
             System.err.println("❌ Ошибка UPDATE: " + e.getMessage());
             sendError(conn, "Ошибка обновления: " + e.getMessage());
         }
     }
+
+    // Вспомогательный метод для обнуления голосов темы
+    // Упрощенный вариант (только voted_topics в users)
+    private void resetVotesForTopic(int topicId) {
+        try {
+            // 1. Обнуляем count_of_users в теме
+            String sqlTopic = "UPDATE topics SET count_of_users = 0 WHERE id = ?";
+            try (Connection conn = DatabaseUtil.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sqlTopic)) {
+                pstmt.setInt(1, topicId);
+                pstmt.executeUpdate();
+            }
+
+            // 2. Обнуляем count в answers
+            String sqlAnswers = "UPDATE answers SET count = 0 WHERE topic_id = ?";
+            try (Connection conn = DatabaseUtil.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sqlAnswers)) {
+                pstmt.setInt(1, topicId);
+                pstmt.executeUpdate();
+            }
+
+            System.out.println("   🔄 Голоса и счетчики для темы ID=" + topicId + " обнулены");
+        } catch (SQLException e) {
+            System.err.println("   ⚠️ Ошибка при обнулении голосов: " + e.getMessage());
+        }
+    }
+
+    // Обнуляем счетчики ответов
+    private void resetAnswerCounts(int topicId) {
+        try {
+            String sql = "UPDATE answers SET count = 0 WHERE topic_id = ?";
+            try (Connection conn = DatabaseUtil.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, topicId);
+                pstmt.executeUpdate();
+            }
+            System.out.println("   🔄 Счетчики ответов для темы ID=" + topicId + " обнулены");
+        } catch (SQLException e) {
+            System.err.println("   ⚠️ Ошибка при обнулении счетчиков: " + e.getMessage());
+        }
+    }
+
+    // Обновляем voted_topics у пользователя в БД
+    private void updateUserVotedTopicsInDB(int userId, List<Integer> votedTopics) {
+        try {
+            Gson gson = new Gson();
+            String votedTopicsJson = gson.toJson(votedTopics);
+            String sql = "UPDATE users SET voted_topics = ? WHERE id = ?";
+            try (Connection conn = DatabaseUtil.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, votedTopicsJson);
+                pstmt.setInt(2, userId);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            System.err.println("   ⚠️ Ошибка при обновлении voted_topics: " + e.getMessage());
+        }
+    }
     
     // DELETE - удаление голосования (без проверки авторизации)
+    // DELETE - удаление голосования (без отправки всего массива)
     private void handleDelete(WebSocket conn, Map<String, Object> request) {
         try {
             Integer id = null;
@@ -243,33 +352,41 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
                     id = (Integer) request.get("id");
                 }
             }
-            
+
             System.out.println("📝 DELETE: Удаление голосования ID=" + id);
-            
+
             if (id == null) {
                 sendError(conn, "Укажите ID голосования для удаления");
                 return;
             }
-            
+
             var existingTopic = TopicDAO.getById(id);
             if (existingTopic == null) {
                 sendError(conn, "Голосование с ID=" + id + " не найдено");
                 return;
             }
-            
+
             String deletedHeader = existingTopic.getNameQuestion();
             TopicDAO.delete(id);
-            
+
             System.out.println("✅ Голосование ID=" + id + " удалено!");
-            
+
+            // 🔥 Отправляем ТОЛЬКО уведомление об удалении, НЕ весь список
             Map<String, Object> response = new HashMap<>();
             response.put("type", "DELETE_SUCCESS");
             response.put("message", "Голосование \"" + deletedHeader + "\" успешно удалено!");
-            response.put("id", id);
-            conn.send(gson.toJson(response));
-            
-            sendAllVotesToAll();
-            
+            response.put("topicId", id);  // Отправляем ID удаленной темы
+            response.put("timestamp", System.currentTimeMillis());
+
+            // Отправляем ВСЕМ клиентам
+            for (Map.Entry<WebSocket, User> entry : sessions.entrySet()) {
+                WebSocket client = entry.getKey();
+                if (client.isOpen()) {
+                    client.send(gson.toJson(response));
+                }
+            }
+
+
         } catch (Exception e) {
             System.err.println("❌ Ошибка DELETE: " + e.getMessage());
             sendError(conn, "Ошибка удаления: " + e.getMessage());
@@ -323,27 +440,38 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
     // ГОЛОСОВАНИЕ - С ПРОВЕРКОЙ АВТОРИЗАЦИИ
     private void handleVote(WebSocket conn, Map<String, Object> request) {
         User user = sessions.get(conn);
-        
+
         try {
             int topicId = ((Double) request.get("id")).intValue();
             List<Double> votesDouble = (List<Double>) request.get("votes");
-            
+
             List<Integer> answerIds = new ArrayList<>();
             for (Double d : votesDouble) {
                 answerIds.add(d.intValue());
             }
-            
+
             if (answerIds.isEmpty()) {
                 sendError(conn, "Не выбран ни один вариант");
                 return;
             }
-            
+
             VoteService.VoteResult result = voteService.processVote(user.getId(), topicId, answerIds);
-            
+
             if (result.isSuccess()) {
+                // Обновляем пользователя в сессии
                 User updatedUser = UserDAO.getById(user.getId());
                 sessions.put(conn, updatedUser);
-                sendAllVotesToAll();
+
+                // 🔥 Отправляем ТОЛЬКО подтверждение, а не весь список
+                Map<String, Object> response = new HashMap<>();
+                response.put("type", "VOTE_SUCCESS");
+                response.put("message", "Голос принят!");
+                response.put("topicId", topicId);
+                response.put("timestamp", System.currentTimeMillis());
+                conn.send(gson.toJson(response));
+
+                // Не отправляем всем, только тому кто голосовал
+
             } else {
                 sendError(conn, result.getMessage());
             }

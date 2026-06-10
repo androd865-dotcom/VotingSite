@@ -7,11 +7,36 @@ import java.util.Arrays;
 
 public class DatabaseUtil {
     private static final String DB_URL = "jdbc:sqlite:voting.db";
+    private static final Object LOCK = new Object();
 
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL);
+    static {
+        try {
+            Class.forName("org.sqlite.JDBC");
+            // При первом запуске инициализируем БД с правильными настройками
+            try (Connection conn = DriverManager.getConnection(DB_URL);
+                 Statement stmt = conn.createStatement()) {
+                stmt.execute("PRAGMA journal_mode = WAL");
+                stmt.execute("PRAGMA busy_timeout = 30000");
+                stmt.execute("PRAGMA synchronous = NORMAL");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
+    public static Connection getConnection() throws SQLException {
+        Connection conn = DriverManager.getConnection(DB_URL);
+        try (Statement stmt = conn.createStatement()) {
+            // Эти настройки нужно применять к каждому соединению
+            stmt.execute("PRAGMA busy_timeout = 30000");
+            stmt.execute("PRAGMA journal_mode = WAL");
+            stmt.execute("PRAGMA synchronous = NORMAL");
+            stmt.execute("PRAGMA cache_size = 10000");
+        }
+        return conn;
+    }
+
+    // Метод для инициализации базы данных
     public static void initializeDatabase() {
         String createUsersTable = """
             CREATE TABLE IF NOT EXISTS users (
@@ -128,5 +153,27 @@ public class DatabaseUtil {
         } catch (SQLException e) {
             System.err.println("⚠️ Ошибка при создании тестовых тем: " + e.getMessage());
         }
+    }
+
+    // Синхронизированный метод для операций записи
+    public static <T> T executeWrite(DatabaseOperation<T> operation) throws SQLException {
+        synchronized (LOCK) {
+            try (Connection conn = getConnection()) {
+                conn.setAutoCommit(false);
+                try {
+                    T result = operation.execute(conn);
+                    conn.commit();
+                    return result;
+                } catch (SQLException e) {
+                    conn.rollback();
+                    throw e;
+                }
+            }
+        }
+    }
+
+    @FunctionalInterface
+    public interface DatabaseOperation<T> {
+        T execute(Connection conn) throws SQLException;
     }
 }
