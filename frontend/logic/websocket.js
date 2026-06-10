@@ -56,7 +56,7 @@ export function renderVote(data) {
     }
 }
 
-export function renderResults(voteId, results) {
+export function renderResults(voteId, results, totalVotes) {
     const voteElement = document.querySelector(`.votelist_dropdown[data-vote-id="${voteId}"]`);
     if (!voteElement) return;
 
@@ -80,15 +80,13 @@ export function renderResults(voteId, results) {
         `;
     });
 
-    // Добавляем общее количество голосов
-    const totalVotes = results.reduce((sum, r) => sum + (r.count || 0), 0);
-
+    // 🔥 Используем переданное totalVotes вместо суммирования count
     content.innerHTML = `
         <ul class="votelist_results">
             ${resultsHtml}
         </ul>
         <div class="votelist_results__total">
-            Всего голосов: ${totalVotes}
+            Всего голосов: ${totalVotes || 0}
         </div>
     `;
 
@@ -124,8 +122,8 @@ socket.addEventListener('message', (event) => {
             if (vote.hasVoted && vote.statistics && vote.statistics.votes) {
                 // Сначала рендерим голосование
                 renderVote(vote);
-                // Затем заменяем на результаты
-                renderResults(vote.id, vote.statistics.votes);
+                // Затем заменяем на результаты, передаем totalVotes из статистики
+                renderResults(vote.id, vote.statistics.votes, vote.statistics.totalVotes);
             } else {
                 renderVote(vote);
             }
@@ -141,7 +139,8 @@ socket.addEventListener('message', (event) => {
     }
     // 3. Результаты голосования
     else if (data.type === 'results') {
-        renderResults(data.id, data.votes);
+        // 🔥 Передаем data.totalVotes из ответа сервера
+        renderResults(data.id, data.votes, data.totalVotes);
 
         // Обновляем кнопку
         const voteElement = document.querySelector(`.votelist_dropdown[data-vote-id="${data.id}"]`);
