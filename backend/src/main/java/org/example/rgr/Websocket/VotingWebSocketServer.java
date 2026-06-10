@@ -86,60 +86,80 @@ public class VotingWebSocketServer extends WebSocketServer {
         }
     }
     
-    // CREATE - создание голосования (без проверки авторизации)
-    private void handleCreate(WebSocket conn, Map<String, Object> request) {
-        try {
-            String header = (String) request.get("header");
-            Boolean many = (Boolean) request.get("many");
-            List<String> variants = (List<String>) request.get("variants");
-            
-            // Если many пришло как строка "false"/"true", преобразуем
-            if (many == null && request.containsKey("many")) {
-                Object manyObj = request.get("many");
-                if (manyObj instanceof String) {
-                    many = "true".equalsIgnoreCase((String) manyObj);
+private void handleCreate(WebSocket conn, Map<String, Object> request) {
+    try {
+        String header = (String) request.get("header");
+        Boolean many = (Boolean) request.get("many");
+        List<String> variants = (List<String>) request.get("variants");
+
+        System.out.println("📝 CREATE: Создание голосования");
+        System.out.println("   Заголовок: " + header);
+        System.out.println("   Множественный выбор: " + many);
+        System.out.println("   Варианты: " + variants);
+
+        // Валидация
+        if (header == null || header.trim().isEmpty()) {
+            sendError(conn, "Введите заголовок голосования");
+            return;
+        }
+
+        if (variants == null || variants.size() < 2) {
+            sendError(conn, "Добавьте минимум 2 варианта ответа");
+            return;
+        }
+
+        // Сохраняем в БД
+        int topicId = TopicDAO.create(header, many != null && many, variants);
+
+        if (topicId > 0) {
+            System.out.println("✅ Голосование создано! ID: " + topicId);
+
+            // Получаем только что созданное голосование
+            User user = sessions.get(conn);
+            int userId = (user != null) ? user.getId() : -1;
+            List<VoteData> allVotes = topicService.getAllVotesForFrontend(userId);
+
+            // Находим созданное голосование по ID
+            VoteData newVote = null;
+            for (VoteData vote : allVotes) {
+                if (vote.getId() == topicId) {
+                    newVote = vote;
+                    break;
                 }
             }
-            
-            System.out.println("📝 CREATE: Создание голосования");
-            System.out.println("   Заголовок: " + header);
-            System.out.println("   Множественный выбор: " + many);
-            System.out.println("   Варианты: " + variants);
-            
-            // Валидация
-            if (header == null || header.trim().isEmpty()) {
-                sendError(conn, "Введите заголовок голосования");
-                return;
+
+            if (newVote != null) {
+                String jsonResponse = gson.toJson(newVote);
+                System.out.println("📤 Отправка создателю: " + jsonResponse);
+
+                // 🔥 Отправляем напрямую тому, кто создал (conn - это соединение создателя)
+                if (conn.isOpen()) {
+                    conn.send(jsonResponse);
+                    System.out.println("   ✅ Отправлено создателю");
+                } else {
+                    System.out.println("   ❌ Соединение создателя закрыто!");
+                }
+
+                // 🔥 Также отправляем всем остальным (если они есть)
+                System.out.println("   Количество других клиентов: " + (sessions.size() - 1));
+                for (Map.Entry<WebSocket, User> entry : sessions.entrySet()) {
+                    WebSocket client = entry.getKey();
+                    if (client != conn && client.isOpen()) {  // Пропускаем создателя
+                        client.send(jsonResponse);
+                        System.out.println("   ✅ Отправлено клиенту: " + client.getRemoteSocketAddress());
+                    }
+                }
             }
-            
-            if (variants == null || variants.size() < 2) {
-                sendError(conn, "Добавьте минимум 2 варианта ответа");
-                return;
-            }
-            
-            // Сохраняем в БД
-            int topicId = TopicDAO.create(header, many != null && many, variants);
-            
-            if (topicId > 0) {
-                System.out.println("✅ Голосование создано! ID: " + topicId);
-                
-                Map<String, Object> response = new HashMap<>();
-                response.put("type", "CREATE_SUCCESS");
-                response.put("message", "Голосование \"" + header + "\" успешно создано!");
-                response.put("id", topicId);
-                conn.send(gson.toJson(response));
-                
-                // Обновляем всех клиентов
-                sendAllVotesToAll();
-            } else {
-                sendError(conn, "Ошибка при сохранении голосования");
-            }
-            
-        } catch (Exception e) {
-            System.err.println("❌ Ошибка CREATE: " + e.getMessage());
-            sendError(conn, "Ошибка создания: " + e.getMessage());
+
+        } else {
+            sendError(conn, "Ошибка при сохранении голосования");
         }
+
+    } catch (Exception e) {
+        System.err.println("❌ Ошибка CREATE: " + e.getMessage());
+        sendError(conn, "Ошибка создания: " + e.getMessage());
     }
+}
     
     // UPDATE - обновление голосования (без проверки авторизации)
     private void handleUpdate(WebSocket conn, Map<String, Object> request) {

@@ -1,7 +1,35 @@
 import removeForm from './removeForm.js';
+const {default: socket} = await import ('./websocket.js')
 
 async function makeVote(event) {
     event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+
+    const header = formData.get('voteName');
+
+    const variants = [];
+    const variantInputs = form.querySelectorAll('input[name^="variant"]');
+    variantInputs.forEach(input => {
+        const value = input.value.trim();
+        if (value) {
+            variants.push(value);
+        }
+    });
+
+    const radioOne = document.querySelector('#form_radio__one');
+    const many = radioOne ? !radioOne.checked : true;
+
+    const data = {
+        type: 'create',
+        header: header,
+        variants: variants,
+        many: many
+    };
+
+    socket.send(JSON.stringify(data))
+    removeForm();
 }
 
 let count = 0;
@@ -50,7 +78,7 @@ function makeVariant(event) {
                 <input type="text" id="variant${count}" class="form_input" name="variant${count++}" required>
             </li>
         `)
-        if (count == 7) document.querySelector('.form_makeVariant__plus').remove();
+        if (count === 7) document.querySelector('.form_makeVariant__plus').remove();
     }
 }
 
