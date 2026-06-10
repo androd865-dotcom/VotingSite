@@ -437,7 +437,7 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
         }
     }
     
-    // ГОЛОСОВАНИЕ - С ПРОВЕРКОЙ АВТОРИЗАЦИИ
+    // ГОЛОСОВАНИЕ - С ПРОВЕРКОЙ АВТОРИЗАЦИИ И ОТПРАВКОЙ РЕЗУЛЬТАТОВ
     private void handleVote(WebSocket conn, Map<String, Object> request) {
         User user = sessions.get(conn);
 
@@ -459,18 +459,24 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
 
             if (result.isSuccess()) {
                 // Обновляем пользователя в сессии
-                User updatedUser = UserDAO.getById(user.getId());
+                User updatedUser = UserDAO.getUserById(user.getId());
                 sessions.put(conn, updatedUser);
 
-                // 🔥 Отправляем ТОЛЬКО подтверждение, а не весь список
+                // СОБИРАЕМ СТАТИСТИКУ ПОСЛЕ ГОЛОСОВАНИЯ
+                Map<String, Object> statistics = collectVoteStatistics(topicId);
+
+                // Отправляем результаты ТОЛЬКО проголосовавшему
                 Map<String, Object> response = new HashMap<>();
-                response.put("type", "VOTE_SUCCESS");
+                response.put("type", "results");
+                response.put("id", topicId);
                 response.put("message", "Голос принят!");
-                response.put("topicId", topicId);
+                response.put("votes", statistics.get("votes"));
+                response.put("totalVotes", statistics.get("totalVotes"));
                 response.put("timestamp", System.currentTimeMillis());
                 conn.send(gson.toJson(response));
 
-                // Не отправляем всем, только тому кто голосовал
+                System.out.println("📊 Статистика отправлена пользователю " + user.getLogin() +
+                                 " для голосования ID=" + topicId);
 
             } else {
                 sendError(conn, result.getMessage());
@@ -479,14 +485,82 @@ private void handleCreate(WebSocket conn, Map<String, Object> request) {
             sendError(conn, "Ошибка голосования: " + e.getMessage());
         }
     }
+
+
+
+    // В классе VotingWebSocketServer добавьте этот метод
+    private Map<String, Object> collectVoteStatistics(int topicId) {
+        Map<String, Object> statistics = new HashMap<>();
+
+        try {
+            Topic topic = TopicDAO.getById(topicId);
+            if (topic == null) {
+                return statistics;
+            }
+
+            List<Answer> answers = topic.getAnswers();
+            int totalVotes = 0;
+
+            // Считаем общее количество голосов
+            for (Answer answer : answers) {
+                totalVotes += answer.getCount();
+            }
+
+            // Формируем результаты по каждому варианту
+            List<Map<String, Object>> results = new ArrayList<>();
+            for (Answer answer : answers) {
+                Map<String, Object> result = new HashMap<>();
+                result.put("id", answer.getId());
+                result.put("name", answer.getNameAnswer());
+                result.put("count", answer.getCount());
+
+                // Вычисляем процент
+                double percent = totalVotes > 0 ?
+                    (answer.getCount() * 100.0 / totalVotes) : 0.0;
+                // Округляем до 1 знака после запятой
+                percent = Math.round(percent * 10.0) / 10.0;
+                result.put("percent", percent);
+
+                results.add(result);
+            }
+
+            statistics.put("votes", results);
+            statistics.put("totalVotes", totalVotes);
+            statistics.put("topicId", topicId);
+            statistics.put("header", topic.getNameQuestion());
+
+            System.out.println("📊 Статистика для голосования ID=" + topicId + ":");
+            System.out.println("   Всего голосов: " + totalVotes);
+            for (Map<String, Object> r : results) {
+                System.out.println("   - " + r.get("name") + ": " + r.get("count") +
+                                 " голосов (" + r.get("percent") + "%)");
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ Ошибка при сборе статистики: " + e.getMessage());
+        }
+
+        return statistics;
+    }
     
     private void sendAllVotes(WebSocket conn, User user) {
         try {
             int userId = (user != null) ? user.getId() : -1;
             List<VoteData> votes = topicService.getAllVotesForFrontend(userId);
+
+            // Если пользователь уже голосовал, добавляем статистику
+            if (user != null) {
+                for (VoteData vote : votes) {
+                    if (vote.isHasVoted()) {
+                        Map<String, Object> stats = collectVoteStatistics(vote.getId());
+                        vote.setStatistics(stats);
+                    }
+                }
+            }
+
             String jsonResponse = gson.toJson(votes);
             conn.send(jsonResponse);
-            System.out.println("📤 Отправлено " + votes.size() + " голосований" + 
+            System.out.println("📤 Отправлено " + votes.size() + " голосований" +
                               (user != null ? " для " + user.getLogin() : " (гость)"));
         } catch (Exception e) {
             System.err.println("❌ Ошибка отправки: " + e.getMessage());

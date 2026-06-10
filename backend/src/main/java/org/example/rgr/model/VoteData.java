@@ -8,7 +8,8 @@ public class VoteData {
     private String header;
     private boolean many;
     private List<Map<String, Object>> variants;
-    private boolean hasVoted;  // НОВЫЙ ФЛАГ - голосовал ли пользователь
+    private boolean hasVoted;
+    private Map<String, Object> statistics;
     
     public VoteData() {}
     
@@ -25,7 +26,9 @@ public class VoteData {
     public boolean isMany() { return many; }
     public List<Map<String, Object>> getVariants() { return variants; }
     public boolean isHasVoted() { return hasVoted; }
-    
+    public Map<String, Object> getStatistics() { return statistics; }
+    public void setStatistics(Map<String, Object> statistics) { this.statistics = statistics; }
+
     public void setId(int id) { this.id = id; }
     public void setHeader(String header) { this.header = header; }
     public void setMany(boolean many) { this.many = many; }
